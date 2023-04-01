@@ -1,5 +1,48 @@
 [
   {
+    "title": "Adobe Analytics alerts and Microsoft Teams",
+    "date": "2023-02-02T00:00:00.000Z",
+    "tags": [
+      "adobe analytics",
+      "microsoft teams",
+      "alert"
+    ],
+    "draft": false,
+    "summary": "A quick way to send Adobe Analytics Alerts to Microsft Teams Rooms",
+    "body": {
+      "raw": "\n\n## Corporate Chat apps and you\n\nHere is a quick one for you all. I, like many IT professionals, am forced to use Microsoft Teams. \nOccasionally, I get a survey from Microsoft asking me how much I like Teams. To which I think to myself, \n“I have no choice in the matter”. That’s life though. We must make the best of the hand we are dealt, even \nif that hand includes sometimes letting a corporate chat app stress you out. Anyway, here’s how I use Teams rooms to save my inbox from Adobe Analytics alerts.\n\n\n\n## Sending Adobe Analytics Alerts as to Teams rooms\n\nDid you know you can turn anything in workspace into an email alert? Did you also know that you can send a\n message to any Microsoft Teams channel via email? Do you see where I am going here?\n\nTo get the email address of any Teams channel (are they channels or rooms? eh who cares?) hover over it \nand click on the 3 dots that come up to the right of the name. You will see an option that says Get Email Address. \nThis will give you an email address for the channel. Emails you send here will show up as teams messages.",
+      "code": "var Component=(()=>{var l=Object.create;var r=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var d=Object.getOwnPropertyNames;var u=Object.getPrototypeOf,y=Object.prototype.hasOwnProperty;var p=(e,a)=>()=>(a||e((a={exports:{}}).exports,a),a.exports),f=(e,a)=>{for(var t in a)r(e,t,{get:a[t],enumerable:!0})},i=(e,a,t,o)=>{if(a&&typeof a==\"object\"||typeof a==\"function\")for(let n of d(a))!y.call(e,n)&&n!==t&&r(e,n,{get:()=>a[n],enumerable:!(o=m(a,n))||o.enumerable});return e};var g=(e,a,t)=>(t=e!=null?l(u(e)):{},i(a||!e||!e.__esModule?r(t,\"default\",{value:e,enumerable:!0}):t,e)),w=e=>i(r({},\"__esModule\",{value:!0}),e);var h=p((I,c)=>{c.exports=_jsx_runtime});var T={};f(T,{default:()=>A,frontmatter:()=>b});var s=g(h()),b={title:\"Adobe Analytics alerts and Microsoft Teams\",date:\"2023-02-02\",tags:[\"adobe analytics\",\"microsoft teams\",\"alert\"],draft:!1,summary:\"A quick way to send Adobe Analytics Alerts to Microsft Teams Rooms\"};function k(e={}){let{wrapper:a}=e.components||{};return a?(0,s.jsx)(a,Object.assign({},e,{children:(0,s.jsx)(t,{})})):t();function t(){let o=Object.assign({h2:\"h2\",a:\"a\",span:\"span\",p:\"p\"},e.components);return(0,s.jsxs)(s.Fragment,{children:[(0,s.jsxs)(o.h2,{id:\"corporate-chat-apps-and-you\",children:[(0,s.jsx)(o.a,{\"aria-hidden\":\"true\",href:\"#corporate-chat-apps-and-you\",tabIndex:\"-1\",children:(0,s.jsx)(o.span,{className:\"icon icon-link\"})}),\"Corporate Chat apps and you\"]}),(0,s.jsx)(o.p,{children:\"Here is a quick one for you all. I, like many IT professionals, am forced to use Microsoft Teams. Occasionally, I get a survey from Microsoft asking me how much I like Teams. To which I think to myself, \\u201CI have no choice in the matter\\u201D. That\\u2019s life though. We must make the best of the hand we are dealt, even if that hand includes sometimes letting a corporate chat app stress you out. Anyway, here\\u2019s how I use Teams rooms to save my inbox from Adobe Analytics alerts.\"}),(0,s.jsxs)(o.h2,{id:\"sending-adobe-analytics-alerts-as-to-teams-rooms\",children:[(0,s.jsx)(o.a,{\"aria-hidden\":\"true\",href:\"#sending-adobe-analytics-alerts-as-to-teams-rooms\",tabIndex:\"-1\",children:(0,s.jsx)(o.span,{className:\"icon icon-link\"})}),\"Sending Adobe Analytics Alerts as to Teams rooms\"]}),(0,s.jsx)(o.p,{children:\"Did you know you can turn anything in workspace into an email alert? Did you also know that you can send a message to any Microsoft Teams channel via email? Do you see where I am going here?\"}),(0,s.jsx)(o.p,{children:\"To get the email address of any Teams channel (are they channels or rooms? eh who cares?) hover over it and click on the 3 dots that come up to the right of the name. You will see an option that says Get Email Address. This will give you an email address for the channel. Emails you send here will show up as teams messages.\"})]})}}var A=k;return w(T);})();\n;return Component;"
+    },
+    "_id": "blog/adobe-analytics-alerts-in-microsoft-teams.mdx",
+    "_raw": {
+      "sourceFilePath": "blog/adobe-analytics-alerts-in-microsoft-teams.mdx",
+      "sourceFileName": "adobe-analytics-alerts-in-microsoft-teams.mdx",
+      "sourceFileDir": "blog",
+      "contentType": "mdx",
+      "flattenedPath": "blog/adobe-analytics-alerts-in-microsoft-teams"
+    },
+    "type": "Blog",
+    "readingTime": {
+      "text": "2 min read",
+      "minutes": 1.035,
+      "time": 62100,
+      "words": 207
+    },
+    "slug": "adobe-analytics-alerts-in-microsoft-teams",
+    "toc": [
+      {
+        "value": "Corporate Chat apps and you",
+        "url": "#corporate-chat-apps-and-you",
+        "depth": 2
+      },
+      {
+        "value": "Sending Adobe Analytics Alerts as to Teams rooms",
+        "url": "#sending-adobe-analytics-alerts-as-to-teams-rooms",
+        "depth": 2
+      }
+    ]
+  },
+  {
     "title": "Sample .md file",
     "date": "2016-03-08T00:00:00.000Z",
     "tags": [
