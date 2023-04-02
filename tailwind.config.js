@@ -40,6 +40,9 @@ module.exports = {
         DEFAULT: {
           css: {
             color: theme('colors.gray.700'),
+            img: {
+              margin: "0 auto"
+            },
             a: {
               color: theme('colors.primary.500'),
               '&:hover': {
@@ -63,6 +66,11 @@ module.exports = {
             },
             'h4,h5,h6': {
               color: theme('colors.gray.900'),
+            },
+            figcaption: {
+              fontStyle: "italic",
+              marginTop: "-1.5rem",
+              textAlign: "center",
             },
             pre: {
               backgroundColor: theme('colors.gray.800'),
@@ -108,6 +116,9 @@ module.exports = {
         dark: {
           css: {
             color: theme('colors.gray.300'),
+            img: {
+              margin: "0 auto"
+            },
             a: {
               color: theme('colors.primary.500'),
               '&:hover': {
