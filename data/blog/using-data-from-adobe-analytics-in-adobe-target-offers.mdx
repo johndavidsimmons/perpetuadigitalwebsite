@@ -1,0 +1,440 @@
+---
+title: 'Using data from Adobe Analytics in Adobe Target Offers'
+date: '2022-12-16'
+tags: ['adobe analytics', 'adobe target', 'testing']
+draft: false
+summary: 'How to use data pulled from Adobe Analytics in an Adobe Target offer.'
+---
+
+## Do social proof CTAs actually work?
+
+I’m sure everyone has seen those popups on online stores that say something like 
+*“15 people are viewing this product right now!”* or *“105 other people from Michigan bought this yesterday!”*. 
+I actually looked around for one in the wild to include a screenshot, but of course, when I need one, 
+I can’t find one. Anyway, I’m going to build one of those in Target that uses **real data** pulled from Adobe Analytics.
+
+![popupexample](https://images.ctfassets.net/on47yk52ubpi/LX2R2PAXrJFZyJDVmeppD/48d92270accf82b3eb77bf992fcb291f/1_eDd83lpg7ihAxJgoYkfOcw.webp)
+<figure>
+<figcaption>This type of thing!</figcaption>
+</figure>
+
+In this example, for simplicity, lets say I have a product page, running an A/B activity in Target for all visitors. 
+50% of visitors to this page will get a pop up that “encourages” them to make a purchase by saying something 
+like: *“n-number of people viewed this product yesterday!”* and the other 50% of visitors will get the default 
+experience of no such popup. The *n-number* used in the popup content will be a real number of unique visitors 
+who viewed that product page yesterday just as it is reflected in an Adobe Analytics Workspace table. 
+The number will change daily to reflect the previous day’s data relative to the current date; i.e. a 
+visitor on the 12th will see data from the 11th, a visitor on the 13th will see data from the 12th, etc.
+
+The example I create will be trivial, but concepts will apply to showing *anything* from a workspace table in a Target offer!
+
+## General overview
+
+As with *almost* everything I write about these days, for the sake of brevity, I have to assume some prior knowledge 
+of the [Adobe Developer Console](https://developer.adobe.com/developer-console/), some programming experience, 
+and familiarity with Target and Adobe Analytics terminology.
+
+Here are the steps:
+
+* Hack together the popup element using a placeholder number.
+* Save the code from above as a Target Offer. Note the offer ID after saving.
+* Build the activity in Target with the 2 experiences using the [form composer](https://experienceleague.adobe.com/docs/target/using/experiences/form-experience-composer.html?lang=en) and set the delivery content in the variant experience to be the offer I just saved above.
+* In workspace now, build a report that shows the number I want to display in the offer. Use the [Oberon debugger](https://developer.adobe.com/cja-apis/docs/endpoints/reporting/debugger/) to grab the parameters used to make that report as JSON.
+* Setup a developer console project that has access to the Target API and the Adobe Analytics API. I will need the API keys in the next step.
+* Write some NodeJS using the [Adobe AIO libraries](https://www.npmjs.com/search?q=adobe%20aio) to pull that number from workspace and update your Target offer to use that number.
+* Automate the NodeJS above to update the offer with new data every day (or however often you want it to update)
+* *Note: For this example lets assume its a desktop only audience. I would never willingly encourge anyone to put a popup on mobile!*
+
+---
+
+## Build the popup
+
+Since I will be serving a chunk of HTML as my Target offer, I need a self contained, complete piece of code that builds the 
+popup, styles it, etc. You could simplify this part by just replacing some static text like a headline or CTA, 
+but I already said popup and my delete key is broken. I don’t remember the keyframes syntax for having things animate 
+directionally in, so lets just have the popup fade in:
+
+```javascript
+const popup = document.createElement('div');
+popup.id = 'popup';
+const content = document.createElement('p');
+const keyframes = document.createElement('style');
+keyframes.innerText =
+  '#popup {font-weight: bold !important;height: 100px !important;width: 350px !important;background-color: #fff !important;border: 3px solid red !important;position: absolute !important;bottom: 0 !important;margin: 1em !important;padding: 1em !important;border-radius: 1em !important;-webkit-animation: popin 4s forwards !important;animation-name: popin 4s forwards !important;}@-webkit-keyframes popin {from {opacity: 0;}to {opacity: 1;}}@keyframes popup {from {opacity: 0;}to {opacity: 1;}}';
+document.querySelector('head').insertAdjacentElement('beforeend', keyframes);
+let message = 'n people viewed this product yesterday!';
+content.innerText = message;
+popup.appendChild(content);
+document.querySelector('body').appendChild(popup);
+```
+
+![n number of people viewed](https://images.ctfassets.net/on47yk52ubpi/6NXOVx8Iv1YkEfzXiVsSVE/ddcb853ac246f7ae28fb0cd2b27ebcc2/1_d_7nt3bXF98bud9bwPeG8w.gif)
+<figure>
+<figcaption>An incredibly enticing popup box with placeholder content. Who are you to resist it?!</figcaption>
+</figure>
+
+## Save it as an offer
+
+Now that I have the popup I want to serve in one of my Target experiences, 
+I need to save it as an offer. Once it is saved as an offer, I will be able to deliver it in any 
+Activity and more easily interact with it via the Target API.
+
+Since I am technically delivering HTML in need to wrap this code in a `<script>` tag so it is valid HTML:
+![save as offer](https://images.ctfassets.net/on47yk52ubpi/6hwD3HxzfppywMRNNlG63X/0dbc6c41ded784fc5b7843434904f592/1_jQclFe_vk_L19eG8ccRYJw.webp)
+<figure>
+<figcaption>New HTML Offer</figcaption>
+</figure>
+
+![fake offer code](https://images.ctfassets.net/on47yk52ubpi/61fP41uUz2haec6Psdc9hH/ac43f41dd9ed00c448e43df0a7d2f8ee/1_Mxm-OiWKLPnEQwiXPCCQuQ.webp)
+<figure>
+<figcaption>Make sure the code your delivering is valid HTML</figcaption>
+</figure>
+
+![grab the offer id](https://images.ctfassets.net/on47yk52ubpi/2N45TpzFFe6BqcrJiZU54M/3e68a814c42c7b11b3a0eca89839e4dd/1__B06TB_Y1Pu3Es7j6sjjHw.webp)
+<figure>
+<figcaption>Grab the offer ID while you are here!</figcaption>
+</figure>
+
+Once the offer is saved, bring up this info box by clicking the (i) icon in the modify column and save the Offer ID for later!
+
+## Build the Activity in Target
+If you’ve never used the form composer, its a little difference than the VEC. 
+You need to have all the specifics of your Activity ready to go. [The official form composer docs are here](https://experienceleague.adobe.com/docs/target/using/experiences/form-experience-composer.html?lang=en).
+
+![form composer setup](https://images.ctfassets.net/on47yk52ubpi/MIMchv6VFEDvOHN1zemC7/49dbf7c0d32566dc11372b188c4b0047/1_vOKzHvOkgSAr-xc0GD1ElQ.webp)
+<figure>
+<figcaption>The setup for my popup offer experience in Target</figcaption>
+</figure>
+
+That’s it in the Target UI until its time to activate the test!
+
+---
+
+## Getting the data I want to use in my Offer from Adobe Analytics
+
+The first step to being able to pull the data I want via the API is to generate it from a report in workspace. 
+While this is not *technically* necessary, Adobe’s Oberon debugging tool makes interacting with the reporting API **much, much** easier. 
+Here’s what my desired data looks like in workspace, the number of unique visitors to my product page yesterday:
+
+![workspace setup data](https://images.ctfassets.net/on47yk52ubpi/4qBPqYz8ZxiC8Fwp2Nhqz2/0bfe5046a76fd2555d2ecbe69f5b2827/1_arBiuRigeG2U0Vy2VMLhug.webp)
+<figure>
+<figcaption>1,388 will change every day. Thus the number in the pop up will change every day!</figcaption>
+</figure>
+
+In order to view (and steal) the underlying API query that made this report, I need to first enable the debugger. 
+To do so, make sure the project is saved and go to *Help > Enable Debugger*. 
+Enabling the debugger will add this little bug guy to your freeform tables. 
+Click it, and you can see the underlying JSON & XML queries the Adobe Analytics API used to generate the data for the table. 
+Depending on how much work you have done on the table, you will also see historical snapshots of queries it has used.
+
+![enable debugger](https://images.ctfassets.net/on47yk52ubpi/5VnYOncJiVuPpjXPcebhPx/ff6502e88fa2f01199dc22e31afe0006/1_kJPPtqkeyVlhteJYYaMu4Q.webp)
+<figure>
+<figcaption>How to enable the debugger</figcaption>
+</figure>
+
+![oberon bug](https://images.ctfassets.net/on47yk52ubpi/5EGfYGHehMBVWNWFtFiyva/fc2b64be16a2d61dd5805db5567567de/1_AFq2k7pVu2MIEW2fjvMr3g.webp)
+<figure>
+<figcaption>Click the little bug fella in your panel</figcaption>
+</figure>
+
+This is what I am looking for inside the debug view. 
+I will use this chunk of JSON later on when I need to programmatically pull this data.
+
+![oberon json](https://images.ctfassets.net/on47yk52ubpi/3LVKr2P63ZnjvRAH4DWwum/d7cab2b8604e7456a37933042a9551b4/1_X9x755hhoK5lcxlHTZ3t6A.webp)
+<figure>
+<figcaption>This is the JSON that Workspace uses to query Adobe Analytics data! In the UI there will also be the response from the API just to the right of here where you will see the data represented.</figcaption>
+</figure>
+
+Jumping ahead a little bit, when I make this call via the Node SDK, you can see that the data is the same as in workspace. 
+That is because I am doing the exact same thing workspace is doing!
+
+```javascript
+const auth = require('@adobe/jwt-auth');
+const aaSDK = require('@adobe/aio-lib-analytics');
+const dotenv = require('dotenv');
+
+// get my env variables
+dotenv.config();
+
+// Adobe API Config vars
+const config = {
+  clientId: process.env.clientId,
+  clientSecret: process.env.clientSecret,
+  technicalAccountId: process.env.technicalAccountId,
+  orgId: process.env.orgId,
+  metaScopes: ['ent_analytics_bulk_ingest_sdk'],
+  privateKey: process.env.privateKey.replace(/\\n/g, '\n'), // make the PK readable as a string
+};
+
+// json query goes here, I left it out here to save space
+const query = {}
+
+
+async function getAAData() {
+  // get bearer token
+  let { access_token } = await auth(config);
+
+  //initialize sdk
+  const aaClient = await aaSDK.init(process.env.companyId, config.clientId, access_token);
+
+  // Query the data
+  const myReport = await aaClient.getReport(query);
+
+  console.log(JSON.stringify(myReport.obj.rows, null, 4));
+}
+
+getAAData();
+```
+
+![code output](https://images.ctfassets.net/on47yk52ubpi/7m583CXdTSSElIfI8aQqot/be989732335a7052055ae3cf4f5249ee/1_q7TZUjU8IY2rmmnAVwGFfQ.webp)
+<figure>
+<figcaption>1388! The same number from workspace!</figcaption>
+</figure>
+
+## Making the query dynamic
+
+In order to make my query dynamic and return the data from the previous day, I need to inject the previous date into it. 
+Although the workspace date range says “Yesterday”, in the query you can see it uses actual dates instead of a keyword:
+
+```javascript
+globalFilters: [
+    {
+      type: 'dateRange',
+      dateRange: '2022-12-13T00:00:00.000/2022-12-14T00:00:00.000',
+    },
+  ],
+```
+
+This is good though, because that means I can just replace the hardcoded dates with whatever date range I want. 
+In this case, the dates of “today” and “yesterday”
+
+ ```javascript
+const today = new Date();
+const todayDate = today.toISOString().split('T')[0];
+const yesterday = today.setDate(today.getDate() - 1);
+const yesterdayDate = new Date(yesterday).toISOString().split('T')[0];
+const query = {
+  rsid: process.env.rsid,
+  globalFilters: [
+    {
+      type: 'dateRange',
+      dateRange: `${yesterdayDate}T00:00:00.000/${todayDate}T00:00:00.000`,
+    },
+  ],
+}
+  etc etc .........
+```
+
+There’s probably a more elegant way to do this way a newer date library from NPM, 
+but this works. So now my report will always pull the previous day’s data, relative to 
+the current date. Exactly the data I want to use in my dynamic offer.
+
+**A note when automating: make sure you know the timezone of your server! Dates might be different if its using UTC.**
+
+![different data](https://images.ctfassets.net/on47yk52ubpi/4juJYuay1gamPWmHNwkx89/8d71d3ed102b35f9bd9edbeb0acbc071/1_O2hmfCedbg4zFwFwejprfA.webp)
+<figure>
+<figcaption>I continued writing this post the next day, thus my data has changed!</figcaption>
+</figure>
+
+## Updating the offer
+
+Now that I can get the data I need from Adobe Analytics. I want to take that data and put it into my offer programmatically. 
+To do this, I can use the [Target AIO Library](https://www.npmjs.com/package/@adobe/aio-lib-target) to get the offer, 
+replace the data, and update it. First lets get the offer:
+
+ ```javascript
+const auth = require('@adobe/jwt-auth');
+const dotenv = require('dotenv');
+const targetSDK = require('@adobe/aio-lib-target');
+
+// get my env variables
+dotenv.config();
+
+// Adobe API Config vars
+const config = {
+  clientId: process.env.clientId,
+  clientSecret: process.env.clientSecret,
+  technicalAccountId: process.env.technicalAccountId,
+  orgId: process.env.orgId,
+  metaScopes: ['ent_analytics_bulk_ingest_sdk', 'ent_marketing_sdk'],
+  privateKey: process.env.privateKey.replace(/\\n/g, '\n'), // make the PK readable as a string
+};
+
+async function getTargetOffer() {
+  let { access_token } = await auth(config);
+  const targetClient = await targetSDK.init(process.env.tenant, config.clientId, access_token);
+  const offer = await targetClient.getOfferById(123456); // fake offer number
+  console.log(offer);
+}
+
+getTargetOffer();
+```
+![aio get offer](https://images.ctfassets.net/on47yk52ubpi/3iTnQZtHZa7ul6dKfCpCFM/db02d0020659fbbe29576d61b5e5bc26/1_-71ZJ5X20ODZ_I4Y8Zc9lA.webp)
+
+The contents of the offer (aka the code) can be found in the response under *obj.content*. 
+I will be calling this offer, getting its current content, replacing the number that is 
+currently in the message with the latest one from workspace, then calling the update function to update the content.
+
+There’s a couple ways to do this, but the easiest is probably regex replace.
+ The tricky part here is the content gets returned as a bunch of concatenated strings because Target is 
+ keeping the spacing that was present when I originally saved the offer. To make things a little easier on myself, 
+ I’m going to go open my offer in the Target UI, grab the code, and minify it. Then when I use the API, 
+ the offer content gets returned to me as a single string which I can use regex replace on:
+
+ ![minified code from offer](https://images.ctfassets.net/on47yk52ubpi/31Epwr73YUm6LXbG2H02fL/579dd5df6067e27d57082bd79be6e33c/1_5NLaFzeETXbD1089Vg7H_Q.webp)
+ <figure>
+<figcaption>Minified to a single string to make life a little easier. Be careful not to mixup quotation marks in the offer code</figcaption>
+</figure>
+
+```javascript
+async function getTargetOffer() {
+  let { access_token } = await auth(config);
+  const targetClient = await targetSDK.init(process.env.tenant, config.clientId, access_token);
+  const offer = await targetClient.getOfferById(123456); // not the real offer ID
+  let currentOfferContent = offer.obj.content;
+  
+  // Im using "700" here just for illustrative purposes
+  let updatedOfferContent = currentOfferContent.replace(
+    'let message="n people viewed this product yesterday!";',
+    `let message="700 people viewed this product yesterday!";`
+  );
+  console.log(updatedOfferContent);
+}
+```
+
+![offer updated](https://images.ctfassets.net/on47yk52ubpi/7FmPvXkqTnqUL3oFh31D3s/3f79b30e56509e28e9ab8c8679f7c6e5/1_yH5_uVcIeDoRaH3jyWoYmw.webp)
+ <figure>
+<figcaption>Finding and replacing the whole message string is the easiest way</figcaption>
+</figure>
+
+So now that I have my updated offer content (the exact same offer code with just that number changed), I can call the updateOffer method with this new content.
+
+```javascript
+const updateOffer = await targetClient.updateOffer(123456, { name: offer.obj.name, content: updatedOfferContent });
+```
+
+When using Target APIs, the UI is often slow to update. So if I were to go check in the offers UI I’d likely still see “n” instead of “700”. 
+However, the delivery API uses the newest version when serving activities so the change would take effect almost immediately.
+
+![700 people gif](https://images.ctfassets.net/on47yk52ubpi/35K6AKBStZihcoU3rxJfKJ/081adffc03606e32c90b1404f851194a/1__uRqmCAh9ux8i6HVMh1ylA.gif)
+ <figure>
+<figcaption>Wow!</figcaption>
+</figure>
+
+---
+
+## Putting it all together...
+
+So now lets put it all together. Call Adobe Analytics for the data from yesterday, extract that number, and update the Target offer with that new number:
+
+```javascript
+const auth = require('@adobe/jwt-auth');
+const dotenv = require('dotenv');
+const targetSDK = require('@adobe/aio-lib-target');
+const aaSDK = require('@adobe/aio-lib-analytics');
+
+// get my env variables
+dotenv.config();
+
+// Adobe API Config vars
+const config = {
+  clientId: process.env.clientId,
+  clientSecret: process.env.clientSecret,
+  technicalAccountId: process.env.technicalAccountId,
+  orgId: process.env.orgId,
+  metaScopes: ['ent_analytics_bulk_ingest_sdk', 'ent_marketing_sdk'],
+  privateKey: process.env.privateKey.replace(/\\n/g, '\n'), // make the PK readable as a string
+};
+const today = new Date();
+const todayDate = today.toISOString().split('T')[0];
+const yesterday = today.setDate(today.getDate() - 1);
+const yesterdayDate = new Date(yesterday).toISOString().split('T')[0];
+
+// the query is truncated here, it may be longer in actuality
+const query = {
+  rsid: process.env.rsid,
+  globalFilters: [
+    {
+      type: 'dateRange',
+      dateRange: `${yesterdayDate}T00:00:00.000/${todayDate}T00:00:00.000`,
+    },
+  ],
+  metricContainer: {
+    metrics: [
+      {
+        columnId: '0',
+        id: 'metrics/visitors',
+        sort: 'desc',
+      },
+    ],
+  },
+  dimension: 'variables/page',
+// etc 
+// etc
+}
+
+async function getAAData() {
+  // get bearer token
+  let { access_token } = await auth(config);
+
+  //initialize sdk
+  const aaClient = await aaSDK.init(process.env.companyId, config.clientId, access_token);
+
+  // Query the data
+  const myReport = await aaClient.getReport(query);
+  let { rows } = myReport.obj;
+
+  // the first number in the first data row
+  let number = rows[0].data.pop();
+  return number;
+}
+
+async function updateTargetOffer() {
+  let { access_token } = await auth(config);
+  const targetClient = await targetSDK.init(process.env.tenant, config.clientId, access_token);
+  const offer = await targetClient.getOfferById(process.env.offerID); // not the real offer ID
+  const number = await getAAData();
+  let currentOfferContent = offer.obj.content;
+  let updatedOfferContent = currentOfferContent.replace(
+    /let message=".+ people viewed this product yesterday!"/g,
+    `let message="${number.toLocaleString('en-us')} people viewed this product yesterday!";`
+  );
+  const updateOffer = await targetClient.updateOffer(process.env.offerID, { name: offer.obj.name, content: updatedOfferContent });
+  return updateOffer;
+}
+
+updateTargetOffer();
+```
+
+A few things to call out in the code above:
+
+* Metascopes in the configuration; In addition to API setup in the developer console, you have to make sure you are using the correct metascopes in your API calls. [More on metascopes here](https://developer.adobe.com/developer-console/docs/guides/authentication/JWT/Scopes/).
+* The regex replacement for the message content is intentionally vague to account for punctuation in number formatting. Also, it is an actual regex now because after the first run, the message will have a number in it instead of *“n”*
+* The number string uses USA style formatting using the *toLocaleString* method. It would be cool to dynamically set this with Target geo profiling somehow…
+* Calling *updateOffer* requires the offer name for some reason even though you are already sending the ID…
+* I moved the offer ID to an environment variable to make this code more reusable. You could also move it to a command line argument.
+
+![updated offer code from api](https://images.ctfassets.net/on47yk52ubpi/1NUlRWMX1kuQfifEmljYnr/5372b421acffecf1d1f849e93b344545/1_YeEPYEnlFlPubE36yC6rfQ.webp)
+ <figure>
+<figcaption>Actual, formatted number of unique visitors to a page in an offer and ready to be served via an Activity</figcaption>
+</figure>
+
+![working popup](https://images.ctfassets.net/on47yk52ubpi/2G9o1gc0y6MlFxMx9DFX3H/1bce0c185a940969d3a77204a765a503/1_Hz8qdbiWIV95i5wyPntVoQ.gif)
+<figure>
+<figcaption>A Target offer that uses real data!</figcaption>
+</figure>
+ 
+![updated offer code in target ui](https://images.ctfassets.net/on47yk52ubpi/7oNoiB9WCc99jUYgUdZjW3/a96ac93a679a1f2e1ee5c1457a1aadd5/1_S7gWx9CyeVmvHRprNRinjw.webp)
+<figure>
+<figcaption>Remember that the UI won’t update immediately, but it will update eventually!</figcaption>
+</figure>
+
+## Automation & Conclusion
+
+In order for this setup actually useful, it needs to be automated to run every day so that the offer always shows the previous day’s data. 
+Since the activity just serves the offer, there is no need to touch the activity once it is activated. It will just serve the latest version of the offer whatever that happens to be.
+
+There are a few options for automating the offer update code daily. A cron job on a linux virtual machine or via an AWS Lambda
+ with AWS Event Bridge are the two most obvious choices. There are plently of resources out there to help you learn about those!
+
+Following all the steps above and putting the code into an automation process will allow you to run a Target experience that shows an offer that shows real data!
