@@ -2,10 +2,11 @@ const siteMetadata = {
   title: 'perpetua.digital',
   author: 'John Simmons',
   headerTitle: 'perpetua.digital',
-  description: 'A blog about stuff',
+  description:
+    'An engineering focused web analytics blog for those of us who became de facto engineers',
   language: 'en-us',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
+  siteUrl: 'https://www.perpetua.digital/',
   siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
   siteLogo: '/static/images/logo.png',
   image: '/static/images/avatar.png',
@@ -16,6 +17,7 @@ const siteMetadata = {
   facebook: 'https://facebook.com',
   youtube: 'https://youtube.com',
   linkedin: 'https://www.linkedin.com',
+  instagram: 'https://instagram.com/johndavidsimmons',
   locale: 'en-US',
   analytics: {
     // If you want to use an analytics provider you have to add it to the
