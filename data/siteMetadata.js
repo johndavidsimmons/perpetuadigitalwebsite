@@ -2,8 +2,7 @@ const siteMetadata = {
   title: 'perpetua.digital',
   author: 'John Simmons',
   headerTitle: 'perpetua.digital',
-  description:
-    'An engineering focused web analytics blog for those of us who became de facto engineers',
+  description: 'An engineering focused web analytics blog for de facto developers',
   language: 'en-us',
   theme: 'system', // system, dark or light
   siteUrl: 'https://www.perpetua.digital/',
