@@ -1,0 +1,298 @@
+---
+title: 'Programmatically interacting with an Adobe Target Activity based on the movement of Mercury'
+date: '2022-12-01'
+tags: ['adobe target', 'automation', 'api', 'testing']
+draft: false
+summary: 'How to enable/disable a Target test based on an API'
+---
+
+## 17th Century Marketing
+
+![mercury](https://images.ctfassets.net/on47yk52ubpi/2qps9JbE6GR1Qbe3zSM3nD/6e51e1d7536978880a215babe59a1267/0_JZ1V0NtFXgCHaWc0.jpg)
+
+<figure>
+  <figcaption>That cursed planet</figcaption>
+</figure>
+
+I want offer special sales on products in my webstore _only_ when [Mercury is in retrograde](https://www.almanac.com/content/mercury-retrograde-dates).
+This happens just a few times a year for about a week at a time.
+It is known to cause online shoppers to be especially susceptible to hot deals, amongst other planetary based maladies…
+
+![wizard](https://images.ctfassets.net/on47yk52ubpi/4URGdrgbwcAec4txke1uCo/d65554985491d7d83a1389b2fb53fb57/1_T5t52u_lvDX5VIhrV6a6NA.webp)
+
+<figure>
+  <figcaption>Online shopper purchasing shoes while Mercury is in retrograde</figcaption>
+</figure>
+
+Since I use Adobe Target to display my sales banners, I will just need look through my telescope each
+night and see if Mercury is in retrograde. If it is, I will go into Target, build my sale content,
+and activate the Activity. I will also need to turn off the Activity when Mercury is _no longer_ in retrograde.
+Either way, I am going outside every night.
+
+Since I don’t even know what Mercury looks like nor do I own a telescope,
+I think I should automate this process. How can I _activate_ my Activity automatically when
+Mercury is in retrograde and _deactivate_ it automatically when Mercury is _no longer_ in retrograde?
+
+![my awsome webstore](https://images.ctfassets.net/on47yk52ubpi/1t5axaJdkAJeuzVvVsO8Wm/9f978215d64de0aebf22145fe9f5d288/1_644XDvp_STJQuaJD2TDT5A.webp)
+
+<figure>
+  <figcaption>My awesome webstore</figcaption>
+</figure>
+
+Let’s start by building an XT Activity in Target with a banner displaying some eye catching content:
+
+![target activity](https://images.ctfassets.net/on47yk52ubpi/3e6rhpnxg0baJCY0dTxv8F/0f88d7fdae7f57ae683a40a6028ea0fb/1_fAcwnBx3McWHXNjz0vkQeA.webp)
+
+<figure>
+  <figcaption>An enticing red banner will surely boost my sales.</figcaption>
+</figure>
+
+![live activity](https://images.ctfassets.net/on47yk52ubpi/2OcmfOQryTRfEuzwIdmwJ4/2a4e36829bdfb1369cd93116851f8b9b/1_RDfjqGVRR6cQkH16WMsyIw.webp)
+
+<figure>
+  <figcaption>The sale banner is active, but I don’t know the status of Mercury!</figcaption>
+</figure>
+
+![banner on site](https://images.ctfassets.net/on47yk52ubpi/6X5HhE5go0QBy5LQLduXSd/69da4f88b514c09b2cd3f135420ac155/1_aiX8JyTA5y8P79-aYnEYvQ.webp)
+
+<figure>
+  <figcaption>
+    When people visit myawesomewebstore.com during while Mercury is in retrograde they will be
+    presented with this amazing banner
+  </figcaption>
+</figure>
+
+---
+
+Because it is 2022 (aka the future) there is API
+for tracking the movement of Mercury. I can automate turning this activity on and off using this API:
+
+`https://mercuryretrogradeapi.com/`
+
+![merciry api](https://images.ctfassets.net/on47yk52ubpi/2bobDMHJTCRWSYgNKZ1Qvf/bca2791232301130221f80b60d5904a0/1_C4rBV4w9FnEommSJb5_cow.webp)
+
+<figure>
+  <figcaption>The future is crazy</figcaption>
+</figure>
+
+---
+
+Before writing any automation code, the first thing to do is hop over to the Adobe Developer Console
+and start a new project that has access to the Target API. If you have never done that before I won’t bore
+you with it here. Information how to setup API projects is here: https://developer.adobe.com/developer-console/
+
+Once I have my API keys I can now interact with Target via its API.
+Normally, I would do this in Python, but Adobe has some excellent Node JS
+libraries that unfortunately you have to dig to find. Seriously, look around on NPM. Here is what I will be using:
+
+- [Target AIO Node JS library](https://www.npmjs.com/package/@adobe/aio-lib-target) - _interact with Target activities_
+- [Adobe Authentication library](https://www.npmjs.com/package/@adobe/jwt-auth) - _Authenticate with Adobe to make API calls_
+- [Axios](https://www.npmjs.com/package/axios) - _Call the Retrograde API_
+- [dotenv](https://www.npmjs.com/package/dotenv) - _read a .env file with environment variables (API creds)_
+
+```javascript
+const auth = require('@adobe/jwt-auth')
+const axios = require('axios')
+const dotenv = require('dotenv')
+const targetSDK = require('@adobe/aio-lib-target')
+
+// get my env variables
+dotenv.config()
+
+// Adobe API Config vars
+const config = {
+  clientId: process.env.clientId,
+  clientSecret: process.env.clientSecret,
+  technicalAccountId: process.env.technicalAccountId,
+  orgId: process.env.orgId,
+  metaScopes: ['ent_marketing_sdk'],
+  privateKey: process.env.privateKey.replace(/\\n/g, '\n'), // make the PK readable as a string
+}
+```
+
+_Note: I am storing my private key in an environment variable here so I don’t have to read it from a file_
+
+In my code I need a function to tell me if Mercury is or is not in retrograde by calling the Mercury API.
+I will use this function to control whether the activity should be activated or deactivated.
+
+```javascript
+// returns boolean
+const isRetrograde = async () => {
+  const response = await axios.get(`https://mercuryretrogradeapi.com/`)
+  return response.data.is_retrograde
+}
+```
+
+Now all I need is the method from the Target SDK for updating Activity States.
+Note that I have removed my actual activity in the example code, but you can find that ID on the Activity Overview page:
+
+![activity overview](https://images.ctfassets.net/on47yk52ubpi/4pT3bmiRqrRenAQMQh8GH5/63dc022246db633855d2ae2fb3ad04a3/1_AubM8SaszQPWLk6Pe_3Mgg.webp)
+
+```javascript
+async function updateActivity() {
+  let activateTest = await isRetrograde()
+  let { access_token } = await auth(config)
+  const targetClient = await targetSDK.init(
+    process.env.companyID,
+    process.env.clientId,
+    access_token
+  )
+
+  const options = {
+    headers: {
+      'content-type': 'application/vnd.adobe.target.v1+json',
+      Accept: 'application/vnd.adobe.target.v1+json',
+    },
+  }
+  // - approved : corresponds to Live in Target UI.
+  // - deactivated : corresponds to Inactive in Target UI.
+  // - saved : corresponds to Inactive in Target UI.
+  const updateActivityState = await targetClient.setActivityState(
+    123456,
+    activateTest ? 'approved' : 'saved',
+    options
+  )
+
+  //   //get offer by id activity
+  const activity = await targetClient.getABActivityById(123456)
+  console.log(activity)
+  return
+}
+
+// call to change activity state
+updateActivity()
+```
+
+Here is the whole file I’ll call _mercury.js_
+
+```javascript
+const auth = require('@adobe/jwt-auth')
+const axios = require('axios')
+const dotenv = require('dotenv')
+const targetSDK = require('@adobe/aio-lib-target')
+
+// get my env variables
+dotenv.config()
+
+// Adobe API Config vars
+const config = {
+  clientId: process.env.clientId,
+  clientSecret: process.env.clientSecret,
+  technicalAccountId: process.env.technicalAccountId,
+  orgId: process.env.orgId,
+  metaScopes: ['ent_marketing_sdk'],
+  privateKey: process.env.privateKey.replace(/\\n/g, '\n'), // make the PK readable as a string
+}
+
+// returns boolean
+const isRetrograde = async () => {
+  const response = await axios.get(`https://mercuryretrogradeapi.com/`)
+  const { is_retrograde } = response.data
+  return is_retrograde
+}
+
+async function updateActivity() {
+  let activateTest = await isRetrograde()
+  let { access_token } = await auth(config)
+  const targetClient = await targetSDK.init(
+    process.env.companyID,
+    process.env.clientId,
+    access_token
+  )
+
+  const options = {
+    headers: {
+      'content-type': 'application/vnd.adobe.target.v1+json',
+      Accept: 'application/vnd.adobe.target.v1+json',
+    },
+  }
+  // - approved : corresponds to Live in Target UI.
+  // - deactivated : corresponds to Inactive in Target UI.
+  // - saved : corresponds to Inactive in Target UI.
+  const updateActivityState = await targetClient.setActivityState(
+    12345,
+    activateTest ? 'approved' : 'saved',
+    options
+  )
+
+  //   //get offer by id activity
+  const activity = await targetClient.getABActivityById(12345)
+  console.log(activity)
+  return
+}
+
+updateActivity()
+```
+
+A few things to note in the code above:
+
+First, the _setActivityState_ method in the SDK needs some special media-type headers specified in the options.
+The SDK doesn’t have this built into the methods nor does it specify anything in the method definitions, but it is required.
+If you get [415 errors](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415#:~:text=The%20HTTP%20415%20Unsupported%20Media,of%20inspecting%20the%20data%20directly.)
+with any methods, double check the headers from this document: https://developers.adobetarget.com/api/
+
+The second parameter in _setActivityState_ is a ternary operator based on what the Retrograde API gives back.
+If Mercury is in retrograde (true from the API) the activity will be set to _approved_. If retrograde is false, the activity will be _deactivated_.
+These statuses are kind of vague, and don’t reflect the terminology in the Target UI which is annoying. The definitions in the comments are taken directly from the docs.
+I am not sure what the difference between _saved_ and _deactivated_ is exactly. Anyway, you get the point. Let’s get to the fun part…
+
+---
+
+## Automation
+
+There’s a couple options here to automate this. You could use an AWS Lambda,
+but then you have to learn about deploying a node project in lambda and how to schedule cron jobs through AWS Event Bridge.
+These tasks are actually trickier than they sound if you’ve never done it before. Rather than give Amazon more money,
+instead, I’ll give Akamai some money and use a Linode virtual machine.Then I can use it to run lots of different cron jobs.
+If you have never used Linode before, check out their [Youtube channel](https://www.youtube.com/@linode).
+I can either spin up a new virtual machine preloaded with NodeJS or spin up a blank one and install Node manually. I will choose the former.
+
+After creating my virtual machine and verifying [I can connect to it via SSH](https://www.linode.com/docs/guides/networking/ssh/),
+I transfer my _mercury.js_ file and _package.json_ file [via SCP](https://www.ssh.com/academy/ssh/scp#basic-usage).
+Regarding environment variables, I can transfer my .env also, or set them directly on the virtual machine.
+Your choice. Once the files are transferred, I can navigate to their directory and run _npm i_ to install all packages I will need.
+I’ll also run _mercury.js_ a couple times to make sure everything works:
+
+```bash
+# transfer files via scp from source machine to VM
+# scp <source> <username@destination>
+scp mercury.js root@192.168.0.1:/home/mercury/mercury.js
+
+# scp other files...
+
+#SSH into my virtual machine. (Not the real IP address :) )
+ssh root@192.168.0.1
+
+# move to mercury directory and install node libraries
+cd mercury && npm i
+
+# run the file to make sure it works!
+node mercury.js
+```
+
+Once I have verified that everything works I can now instruct my virtual machine to run this as often as I want.
+I think daily will suffice as Mercury doesn’t move that fast. To do this I just need to edit my virtual machine’s
+crontab file. Cron jobs are a way to tell a Linux computer to execute a specific task at a specific time.
+[Please see this excellent video from Linode about writing cron jobs.](https://youtu.be/v952m13p-b4)
+
+In the end, my _crontab_ file will have this at the bottom:
+
+```bash
+# etc
+# etc
+# m h dom mon dow
+0 8 * * * cd /somepath/mercury && node mercury.js
+```
+
+Basically this says “_every day at 8am, run mercury.js_”. Every day, this command will run and mercury.js will
+activate/deactivate my activity based on what the mercury API says. Once I save my _crontab_ file,
+I have effectively created an Adobe Target Activity that is conditionally active based on the movement of a planet! The future is crazy.
+
+![active test](https://images.ctfassets.net/on47yk52ubpi/3o4BxcVYr5MAkyxCZKnVyO/3b24d1e0ba2a2c5710a255f65bbaa22b/1_DvRL0HerPI6zK1fxgHp0Tw.webp)
+
+_A quick note: the target UI doesn’t always update immediately to reflect API changes, but you can verify that the activity is activated via the Changelog section. The UI changes will show up after a few minutes._
+
+Now this example is _trivial_, some might even call it stupid (_how dare you!_), but the set up is real.
+What if you run all types of date specific Target activities? Black Friday, Cyber Monday, Super Bowl,
+President’s Day, Flag Day, John’s birthday, and so on. I could have all sorts of Target Activities that
+programmatically turn on and off based on the date. With some initial setup, I could plan out a whole year of sales banners in a few hours!
