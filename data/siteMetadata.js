@@ -9,7 +9,7 @@ const siteMetadata = {
   siteRepo: 'https://github.com/perpetua-digital/perpetuadigitalwebsite',
   siteLogo: '/static/images/logo.png',
   image: '/static/images/avatar.png',
-  socialBanner: '/static/images/twitter-card.png',
+  socialBanner: '/static/images/socialpreview.png',
   email: 'john@perpetua.digital',
   github: 'https://github.com',
   twitter: 'https://twitter.com/Twitter',
