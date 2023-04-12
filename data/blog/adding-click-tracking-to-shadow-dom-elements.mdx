@@ -9,7 +9,7 @@ summary: 'How to add click tracking to modern web components'
 ## The good ole DOM
 
 The DOM used to be a reliable place. Every element on you page could be found within it.
-Those days are fading thanks to modern [web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) and their concept of a _shadow dom_.
+Those days are fading thanks to modern [web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) and their concept of a [shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM).
 Not to be confused with the [shadow realm](https://www.urbandictionary.com/define.php?term=Shadow+Realm). This is not a bad thing of course,
 but does represent a problem for tag managers like Launch that rely on the regular DOM to add event listeners to elements to trigger rules.
 Web components and the shadow dom are actually easier to explain with a bit of code and some visuals.
@@ -18,8 +18,8 @@ Web components and the shadow dom are actually easier to explain with a bit of c
 
 <figure>
   <figcaption>
-    The red button is a regular element, and the blue button is a web component that lives in the
-    shadow dom
+    The red button is a regular element, and the blue button is a web component that is encapsulated
+    in the shadow dom.
   </figcaption>
 </figure>
 
@@ -27,11 +27,12 @@ Web components and the shadow dom are actually easier to explain with a bit of c
 
 <figure>
   <figcaption>
-    "shadow root (open)" signifies that this element is a web component that lives in the shadow dom
+    "shadow root (open)" signifies that this element is a web component that lives in the shadow
+    dom. It cannot be accessed via regular document.querySelector
   </figcaption>
 </figure>
 
-Here is the code for the page above. Note that the blue button is a custom defined HTML element.
+Here is the code for the page above. Note that the blue button is a custom defined HTML element known as a web component
 
 ```html
 <!DOCTYPE html>
@@ -97,11 +98,20 @@ Everything renders and looks normal, but the issue occurs when you try to select
   <figcaption>The blue shadow dom button cannot be found...</figcaption>
 </figure>
 
-So _where_ does this issue manifest? I usually run across it when trying to add click tracking to these web component elements.
+---
+
+## Where does this manifest in Launch?
+
+I usually run across it when trying to add click tracking to these web components.
 Just adding a regular Launch click tracking trigger to a rule doesn't work. For example:
 
-IMAGE OF LAUNCH RULE
-GIF OF LAUNCH RULE NOT WORKING
+![blue button rule](https://images.ctfassets.net/on47yk52ubpi/1nV1Rgvt2cfP15h2DV68Tv/1cafb4916f1b4a7961ce1f7c1d695430/Screenshot_2023-04-12_at_2.50.50_PM.png)
+![red button rule](https://images.ctfassets.net/on47yk52ubpi/6FHE1xLqp5FJgujk02uvHV/f6831c504ec1e3a920331f737dbaddc4/Screenshot_2023-04-12_at_2.58.41_PM.png)
+![button rule gifs](https://images.ctfassets.net/on47yk52ubpi/3XcB8JcbV60AfgVTCd3gC7/aa0abdb36005733122ef43be7222c0bf/buttonfires.gif)
+
+<figure>
+  <figcaption>The blue button rule, she no work :(</figcaption>
+</figure>
 
 ---
 
@@ -123,20 +133,41 @@ into an event listener. If I wanted to track clicks on the blue button for examp
 
 ```javascript
 // ...
-button.addEventListener('click', () => _satellite.track('shadow element click', { extra: 'data' }))
-// or
+button.addEventListener('click', () =>
+  _satellite.track('shadow element click!!!', { extra: 'data' })
+)
+shadow.appendChild(button)
+```
+
+![irect call rule](https://images.ctfassets.net/on47yk52ubpi/3kolQkxUBmc40YnjYkeSdf/da855cad428f61d079de34e518e27183/bluebuttondirectcall.gif)
+
+<figure>
+  <figcaption>I didn't set up a direct call rule, but you get the point, it works</figcaption>
+</figure>
+
+**or**
+
+```javascript
+// ...
 button.addEventListener('click', () =>
   datalayer.push({ event: 'shadow element click', extra: 'data' })
 )
 shadow.appendChild(button)
-//...
 ```
 
-CUSTOM CODE IMAGE
-PICTURE OF RULE FIRING IN THE DOM
+![data layer push](https://images.ctfassets.net/on47yk52ubpi/16vlVePf6QBBgPJqaGtEHJ/99b13a20d58d30c44af3f1ab76f0a320/datalayerpush.gif)
+
+<figure>
+  <figcaption>
+    I don't have a data layer extension setup on this fake site, but again, you see where I am going
+    with this
+  </figcaption>
+</figure>
+
+There is also the option of adding ADDING YOUR OWN EVENT LISTERN IN CUSTOM CODE!!!!
 
 So that is how you can add tracking to a shadow root element in the shadow dom. In this case, I added click
-tracking via an event listener, but if you can write it in Javascript, you can communicate it to Launch. For example,
+tracking via an event listener, but if you can write it in Javascript event listener, you can communicate it to Launch. For example,
 if I wanted to track impressions of the blue button, I could add an intersection observer and fire off direct calls/data layer pushes.
 Its all about identifying the shadow root element correct.
 
