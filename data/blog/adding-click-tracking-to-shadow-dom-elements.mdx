@@ -1,0 +1,166 @@
+---
+title: 'PLACEHOLDER SHADOW DOM RULES'
+date: '2023-04-12'
+tags: ['adobe launch', 'click tracking', 'javascript', 'web components']
+draft: false
+summary: 'How to add click tracking to modern web components'
+---
+
+## The good ole DOM
+
+The DOM used to be a reliable place. Every element on you page could be found within it.
+Those days are fading thanks to modern [web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) and their concept of a _shadow dom_.
+Not to be confused with the [shadow realm](https://www.urbandictionary.com/define.php?term=Shadow+Realm). This is not a bad thing of course,
+but does represent a problem for tag managers like Launch that rely on the regular DOM to add event listeners to elements to trigger rules.
+Web components and the shadow dom are actually easier to explain with a bit of code and some visuals.
+
+![red and blue button](https://images.ctfassets.net/on47yk52ubpi/EFtfZyGfMsSXbUhem7Vvo/f16a8adb99ae736bf817cc5d41e3783c/Screenshot_2023-04-09_at_5.57.38_PM.png)
+
+<figure>
+  <figcaption>
+    The red button is a regular element, and the blue button is a web component that lives in the
+    shadow dom
+  </figcaption>
+</figure>
+
+![shadow dom html](https://images.ctfassets.net/on47yk52ubpi/7EUzVCDq1zRssQC4cPyng9/dea0adbdcb0d98b095a052fb8699334b/Screenshot_2023-04-09_at_8.37.17_PM.png)
+
+<figure>
+  <figcaption>
+    "shadow root (open)" signifies that this element is a web component that lives in the shadow dom
+  </figcaption>
+</figure>
+
+Here is the code for the page above. Note that the blue button is a custom defined HTML element.
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Buttons</title>
+    <style>
+      .button {
+        width: 200px;
+        height: 200px;
+        border: none;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 100px;
+        cursor: pointer;
+        margin: 10px;
+      }
+
+      .regular {
+        background-color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="redButton" class="button regular">Regular DOM Element</button>
+
+    <script>
+      // This is a web component
+      class ShadowButton extends HTMLElement {
+        constructor() {
+          super()
+          const shadow = this.attachShadow({ mode: 'open' })
+
+          const button = document.createElement('button')
+          button.setAttribute('id', 'blueButton')
+          button.setAttribute('class', 'button shadow')
+          button.setAttribute(
+            'style',
+            'width: 200px; height: 200px; border: none; color: white; font-size: 16px; font-weight: bold; text-align: center; line-height: 100px; cursor: pointer; margin: 10px;background-color:blue'
+          )
+          button.textContent = 'Shadow DOM Element'
+
+          shadow.appendChild(button)
+        }
+      }
+
+      // Register the web component
+      customElements.define('shadow-button', ShadowButton)
+    </script>
+
+    <shadow-button class="button shadow"></shadow-button>
+  </body>
+</html>
+```
+
+Everything renders and looks normal, but the issue occurs when you try to select these elements from the DOM.
+
+![shadow dom null](https://images.ctfassets.net/on47yk52ubpi/5o3ghfRg5zP7dUKeaurWwS/598bfa2ed296802764d11220d6fa5f56/Screenshot_2023-04-09_at_6.01.39_PM.png)
+
+<figure>
+  <figcaption>The blue shadow dom button cannot be found...</figcaption>
+</figure>
+
+So _where_ does this issue manifest? I usually run across it when trying to add click tracking to these web component elements.
+Just adding a regular Launch click tracking trigger to a rule doesn't work. For example:
+
+IMAGE OF LAUNCH RULE
+GIF OF LAUNCH RULE NOT WORKING
+
+---
+
+## Workarounds
+
+So there isn't really an out of the box solution for this in Launch. Maybe someone should make an extension 🤔
+Anyway, I really only see 2 options:
+
+- Build a direct call event or datalayer push into the code that builds the web component
+- In Launch custom code, write some custom code that reaches into the shadow root and adds direct call/datalayer push
+
+If anyone knows an out of the box solution - please reach out!
+
+## Integrating into the web component
+
+Although web compoents are special as mentioned above, they are still just regular HTML & JS and thus can
+have event listeners added to them. Because of this, you can bake a direct call or data layer push event right
+into an event listener. If I wanted to track clicks on the blue button for example:
+
+```javascript
+// ...
+button.addEventListener('click', () => _satellite.track('shadow element click', { extra: 'data' }))
+// or
+button.addEventListener('click', () =>
+  datalayer.push({ event: 'shadow element click', extra: 'data' })
+)
+shadow.appendChild(button)
+//...
+```
+
+CUSTOM CODE IMAGE
+PICTURE OF RULE FIRING IN THE DOM
+
+So that is how you can add tracking to a shadow root element in the shadow dom. In this case, I added click
+tracking via an event listener, but if you can write it in Javascript, you can communicate it to Launch. For example,
+if I wanted to track impressions of the blue button, I could add an intersection observer and fire off direct calls/data layer pushes.
+Its all about identifying the shadow root element correct.
+
+```javascript
+// Create a new shadow root element
+// const element = document.createElement('div');
+//const shadowRoot = element.attachShadow({ mode: 'open' });
+
+// Create a new Intersection Observer object and observe the shadow root element
+const observer = new IntersectionObserver(
+  (entries) => {
+    // Handle intersection changes here
+    if (entry.isIntersecting) {
+      // Fire the custom event on the observed element
+      entry.target.dispatchEvent(customEvent)
+    }
+  },
+  { root: shadowRoot }
+)
+
+// Observe a child element of the shadow root element
+const targetElement = shadowRoot.querySelector('.target')
+observer.observe(targetElement)
+```
+
+IMPRESSION TRACKING IMAGE RULE IN LAUNCH
+IMPRESSION TRAKCING RULE FIRING
