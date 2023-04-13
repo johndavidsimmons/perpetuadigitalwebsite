@@ -1,0 +1,202 @@
+---
+title: 'Adding click tracking to shadow DOM web components with Adobe Tags/Launch'
+date: '2023-04-12'
+tags: ['adobe launch', 'click tracking', 'javascript', 'web components', 'adobe tags']
+draft: false
+summary: 'How to add click tracking to modern web components'
+---
+
+## The good ole DOM
+
+The DOM used to be a reliable place. Every element on you page could be found within it.
+Those days are fading, or at least becoming trickier thanks to modern [web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) and their concept of a [shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM).
+Not to be confused with the [shadow realm](https://www.urbandictionary.com/define.php?term=Shadow+Realm). Web components are useful,
+but present a problem for tag managers like Launch that rely on the regular DOM to trigger rules.
+Lets take a look at a web component that exists in a shadow dom:
+
+![red and blue button](https://images.ctfassets.net/on47yk52ubpi/EFtfZyGfMsSXbUhem7Vvo/f16a8adb99ae736bf817cc5d41e3783c/Screenshot_2023-04-09_at_5.57.38_PM.png)
+
+<figure>
+  <figcaption>
+    The red button is a regular element, and the blue button is a web component that is encapsulated
+    in the shadow dom.
+  </figcaption>
+</figure>
+
+![shadow dom html](https://images.ctfassets.net/on47yk52ubpi/7EUzVCDq1zRssQC4cPyng9/dea0adbdcb0d98b095a052fb8699334b/Screenshot_2023-04-09_at_8.37.17_PM.png)
+
+<figure>
+  <figcaption>
+    "shadow root (open)" signifies that this element is a web component that lives in the shadow
+    dom. It cannot be accessed via regular document.querySelector
+  </figcaption>
+</figure>
+
+Here is the code for the page above. The blue button is a custom defined HTML element known as a web component
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Buttons</title>
+    <style>
+      .button {
+        width: 200px;
+        height: 200px;
+        border: none;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 100px;
+        cursor: pointer;
+        margin: 10px;
+      }
+
+      .regular {
+        background-color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="redButton" class="button regular">Regular DOM Element</button>
+
+    <script>
+      // This is a web component
+      class ShadowButton extends HTMLElement {
+        constructor() {
+          super()
+          const shadow = this.attachShadow({ mode: 'open' })
+
+          const button = document.createElement('button')
+          button.setAttribute('id', 'blueButton')
+          button.setAttribute('class', 'button shadow')
+          button.setAttribute(
+            'style',
+            'width: 200px; height: 200px; border: none; color: white; font-size: 16px; font-weight: bold; text-align: center; line-height: 100px; cursor: pointer; margin: 10px;background-color:blue'
+          )
+          button.textContent = 'Shadow DOM Element'
+
+          shadow.appendChild(button)
+        }
+      }
+
+      // Register the web component
+      customElements.define('shadow-button', ShadowButton)
+    </script>
+
+    <shadow-button class="button shadow"></shadow-button>
+  </body>
+</html>
+```
+
+Everything renders and looks normal, but the issue occurs when you try to select these elements from the DOM.
+
+![shadow dom null](https://images.ctfassets.net/on47yk52ubpi/5o3ghfRg5zP7dUKeaurWwS/598bfa2ed296802764d11220d6fa5f56/Screenshot_2023-04-09_at_6.01.39_PM.png)
+
+<figure>
+  <figcaption>The blue shadow dom button cannot be found...</figcaption>
+</figure>
+
+---
+
+## Where does this cause problems in Launch?
+
+I usually run across this issue when trying to add click tracking to these web components.
+Just adding a regular Launch click trigger to a rule doesn't work. For example:
+
+![blue button rule](https://images.ctfassets.net/on47yk52ubpi/1nV1Rgvt2cfP15h2DV68Tv/1cafb4916f1b4a7961ce1f7c1d695430/Screenshot_2023-04-12_at_2.50.50_PM.png)
+
+<figure>
+  <figcaption>Web component</figcaption>
+</figure>
+![red button rule](https://images.ctfassets.net/on47yk52ubpi/6FHE1xLqp5FJgujk02uvHV/f6831c504ec1e3a920331f737dbaddc4/Screenshot_2023-04-12_at_2.58.41_PM.png)
+<figure>
+  <figcaption>Regular element</figcaption>
+</figure>
+![button rule gifs](https://images.ctfassets.net/on47yk52ubpi/3XcB8JcbV60AfgVTCd3gC7/aa0abdb36005733122ef43be7222c0bf/buttonfires.gif)
+
+<figure>
+  <figcaption>The blue button rule, she no work :(</figcaption>
+</figure>
+
+---
+
+## Workarounds
+
+So there isn't really an out of the box solution for this in Launch. Maybe someone should make an extension 🤔
+Anyway, I really only see 2 options:
+
+- Build a direct call event or datalayer push into the code that builds the web component
+- Write custom code in Launh that reaches into the shadow root and adds direct call/datalayer push on the click event
+
+## Integrating into the web component
+
+Although web components are special as mentioned above, they are still just regular HTML & JS, and thus, can
+have event listeners added to them. Because of this, you can bake a direct call or data layer push event right
+into an event listener. If I wanted to track clicks on the blue button for example:
+
+```javascript
+// ...
+button.addEventListener('click', () =>
+  _satellite.track('shadow element click!!!', { extra: 'data' })
+)
+shadow.appendChild(button)
+```
+
+![irect call rule](https://images.ctfassets.net/on47yk52ubpi/3kolQkxUBmc40YnjYkeSdf/da855cad428f61d079de34e518e27183/bluebuttondirectcall.gif)
+
+<figure>
+  <figcaption>I didn't set up a direct call rule, but you get the point, it works</figcaption>
+</figure>
+
+**or**
+
+```javascript
+// ...
+button.addEventListener('click', () =>
+  datalayer.push({ event: 'shadow element click', extra: 'data' })
+)
+shadow.appendChild(button)
+```
+
+![data layer push](https://images.ctfassets.net/on47yk52ubpi/16vlVePf6QBBgPJqaGtEHJ/99b13a20d58d30c44af3f1ab76f0a320/datalayerpush.gif)
+
+<figure>
+  <figcaption>
+    I don't have a data layer extension setup on this fake site, but again, you see where I am going
+    with this
+  </figcaption>
+</figure>
+
+## Adding your own event listeners via custom code
+
+This option is less than ideal given that you need to manually traverse into the shadow dom with specific selectors, but nevertheless,
+it works. In my rule, I'm waiting for the `<shadow-button>` element to exist, then reaching into it and adding my own event
+listener to the `#blueButton` web component.
+
+![shadow element exists](https://images.ctfassets.net/on47yk52ubpi/2v9pMgy5ZmijqfE1bg0Qih/c5dd26982743329f4fac10dc6354ee99/Screenshot_2023-04-13_at_8.32.44_AM.png)
+
+<figure>
+  <figcaption>
+    Launch rule that fires when the element containing the web component exists
+  </figcaption>
+</figure>
+
+![shadow button custom code](https://images.ctfassets.net/on47yk52ubpi/4PKJiYLofEaw9PIg7Lcwe0/3c51703b11f924788c8ae0043cf94ec6/Screenshot_2023-04-13_at_9.25.20_AM.png)
+
+<figure>
+  <figcaption>Manually adding an event listener to a web component with custom code</figcaption>
+</figure>
+
+![shadow custom code gif](https://images.ctfassets.net/on47yk52ubpi/4KNW7Qg9JdPqH3pShG3khD/5b96b1f9084205ad2b5eaf86d55c4a38/customcodeshadow.gif)
+
+<figure>
+  <figcaption>Click events tracking is now possible.</figcaption>
+</figure>
+
+## Wrap up
+
+So that is how you can add tracking to a web component element in the shadow dom. In this case, I added click
+tracking via event listeners, but if you should be able to write any kind of activity tracking needed provided
+you do it in custom code. If anyone has a better way to do this, please reach out!
