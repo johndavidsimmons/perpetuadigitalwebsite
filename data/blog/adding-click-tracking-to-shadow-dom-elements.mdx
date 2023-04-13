@@ -1,7 +1,7 @@
 ---
-title: 'PLACEHOLDER SHADOW DOM RULES'
+title: 'Adding click tracking to shadow DOM web components with Adobe Tags/Launch'
 date: '2023-04-12'
-tags: ['adobe launch', 'click tracking', 'javascript', 'web components']
+tags: ['adobe launch', 'click tracking', 'javascript', 'web components', 'adobe tags']
 draft: false
 summary: 'How to add click tracking to modern web components'
 ---
@@ -9,10 +9,10 @@ summary: 'How to add click tracking to modern web components'
 ## The good ole DOM
 
 The DOM used to be a reliable place. Every element on you page could be found within it.
-Those days are fading thanks to modern [web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) and their concept of a [shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM).
-Not to be confused with the [shadow realm](https://www.urbandictionary.com/define.php?term=Shadow+Realm). This is not a bad thing of course,
-but does represent a problem for tag managers like Launch that rely on the regular DOM to add event listeners to elements to trigger rules.
-Web components and the shadow dom are actually easier to explain with a bit of code and some visuals.
+Those days are fading, or at least becoming trickier thanks to modern [web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) and their concept of a [shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM).
+Not to be confused with the [shadow realm](https://www.urbandictionary.com/define.php?term=Shadow+Realm). Web components are useful,
+but present a problem for tag managers like Launch that rely on the regular DOM to trigger rules.
+Lets take a look at a web component that exists in a shadow dom:
 
 ![red and blue button](https://images.ctfassets.net/on47yk52ubpi/EFtfZyGfMsSXbUhem7Vvo/f16a8adb99ae736bf817cc5d41e3783c/Screenshot_2023-04-09_at_5.57.38_PM.png)
 
@@ -32,7 +32,7 @@ Web components and the shadow dom are actually easier to explain with a bit of c
   </figcaption>
 </figure>
 
-Here is the code for the page above. Note that the blue button is a custom defined HTML element known as a web component
+Here is the code for the page above. The blue button is a custom defined HTML element known as a web component
 
 ```html
 <!DOCTYPE html>
@@ -100,13 +100,20 @@ Everything renders and looks normal, but the issue occurs when you try to select
 
 ---
 
-## Where does this manifest in Launch?
+## Where does this cause problems in Launch?
 
-I usually run across it when trying to add click tracking to these web components.
-Just adding a regular Launch click tracking trigger to a rule doesn't work. For example:
+I usually run across this issue when trying to add click tracking to these web components.
+Just adding a regular Launch click trigger to a rule doesn't work. For example:
 
 ![blue button rule](https://images.ctfassets.net/on47yk52ubpi/1nV1Rgvt2cfP15h2DV68Tv/1cafb4916f1b4a7961ce1f7c1d695430/Screenshot_2023-04-12_at_2.50.50_PM.png)
+
+<figure>
+  <figcaption>Web component</figcaption>
+</figure>
 ![red button rule](https://images.ctfassets.net/on47yk52ubpi/6FHE1xLqp5FJgujk02uvHV/f6831c504ec1e3a920331f737dbaddc4/Screenshot_2023-04-12_at_2.58.41_PM.png)
+<figure>
+  <figcaption>Regular element</figcaption>
+</figure>
 ![button rule gifs](https://images.ctfassets.net/on47yk52ubpi/3XcB8JcbV60AfgVTCd3gC7/aa0abdb36005733122ef43be7222c0bf/buttonfires.gif)
 
 <figure>
@@ -121,13 +128,11 @@ So there isn't really an out of the box solution for this in Launch. Maybe someo
 Anyway, I really only see 2 options:
 
 - Build a direct call event or datalayer push into the code that builds the web component
-- In Launch custom code, write some custom code that reaches into the shadow root and adds direct call/datalayer push
-
-If anyone knows an out of the box solution - please reach out!
+- Write custom code in Launh that reaches into the shadow root and adds direct call/datalayer push on the click event
 
 ## Integrating into the web component
 
-Although web compoents are special as mentioned above, they are still just regular HTML & JS and thus can
+Although web components are special as mentioned above, they are still just regular HTML & JS, and thus, can
 have event listeners added to them. Because of this, you can bake a direct call or data layer push event right
 into an event listener. If I wanted to track clicks on the blue button for example:
 
@@ -164,34 +169,34 @@ shadow.appendChild(button)
   </figcaption>
 </figure>
 
-There is also the option of adding ADDING YOUR OWN EVENT LISTERN IN CUSTOM CODE!!!!
+## Adding your own event listeners via custom code
 
-So that is how you can add tracking to a shadow root element in the shadow dom. In this case, I added click
-tracking via an event listener, but if you can write it in Javascript event listener, you can communicate it to Launch. For example,
-if I wanted to track impressions of the blue button, I could add an intersection observer and fire off direct calls/data layer pushes.
-Its all about identifying the shadow root element correct.
+This option is less than ideal given that you need to manually traverse into the shadow dom with specific selectors, but nevertheless,
+it works. In my rule, I'm waiting for the `<shadow-button>` element to exist, then reaching into it and adding my own event
+listener to the `#blueButton` web component.
 
-```javascript
-// Create a new shadow root element
-// const element = document.createElement('div');
-//const shadowRoot = element.attachShadow({ mode: 'open' });
+![shadow element exists](https://images.ctfassets.net/on47yk52ubpi/2v9pMgy5ZmijqfE1bg0Qih/c5dd26982743329f4fac10dc6354ee99/Screenshot_2023-04-13_at_8.32.44_AM.png)
 
-// Create a new Intersection Observer object and observe the shadow root element
-const observer = new IntersectionObserver(
-  (entries) => {
-    // Handle intersection changes here
-    if (entry.isIntersecting) {
-      // Fire the custom event on the observed element
-      entry.target.dispatchEvent(customEvent)
-    }
-  },
-  { root: shadowRoot }
-)
+<figure>
+  <figcaption>
+    Launch rule that fires when the element containing the web component exists
+  </figcaption>
+</figure>
 
-// Observe a child element of the shadow root element
-const targetElement = shadowRoot.querySelector('.target')
-observer.observe(targetElement)
-```
+![shadow button custom code](https://images.ctfassets.net/on47yk52ubpi/4PKJiYLofEaw9PIg7Lcwe0/3c51703b11f924788c8ae0043cf94ec6/Screenshot_2023-04-13_at_9.25.20_AM.png)
 
-IMPRESSION TRACKING IMAGE RULE IN LAUNCH
-IMPRESSION TRAKCING RULE FIRING
+<figure>
+  <figcaption>Manually adding an event listener to a web component with custom code</figcaption>
+</figure>
+
+![shadow custom code gif](https://images.ctfassets.net/on47yk52ubpi/4KNW7Qg9JdPqH3pShG3khD/5b96b1f9084205ad2b5eaf86d55c4a38/customcodeshadow.gif)
+
+<figure>
+  <figcaption>Click events tracking is now possible.</figcaption>
+</figure>
+
+## Wrap up
+
+So that is how you can add tracking to a web component element in the shadow dom. In this case, I added click
+tracking via event listeners, but if you should be able to write any kind of activity tracking needed provided
+you do it in custom code. If anyone has a better way to do this, please reach out!
