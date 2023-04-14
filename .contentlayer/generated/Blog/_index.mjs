@@ -6,5 +6,6 @@ import blog__buildingAnAdobeAnalyticsMetricsAndDimensionsDefinitionsPageWithTheA
 import blog__collectingQueryParametersWithAmplitudeInAdobeLaunchMdx from './blog__collecting-query-parameters-with-amplitude-in-adobe-launch.mdx.json' assert { type: 'json' }
 import blog__interactingWithAnAdobeTargetActivityBasedOnTheMovementOfMercuryMdx from './blog__interacting-with-an-adobe-target-activity-based-on-the-movement-of-mercury.mdx.json' assert { type: 'json' }
 import blog__usingDataFromAdobeAnalyticsInAdobeTargetOffersMdx from './blog__using-data-from-adobe-analytics-in-adobe-target-offers.mdx.json' assert { type: 'json' }
+import blog__githubSyncPart1Mdx from './blog__github-sync-part1.mdx.json' assert { type: 'json' }
 
-export const allBlogs = [blog__addingClickTrackingToShadowDomElementsMdx, blog__adobeAnalyticsAlertsInMicrosoftTeamsMdx, blog__buildingAnAdobeAnalyticsMetricsAndDimensionsDefinitionsPageWithTheAdobeAnalyticsApiMdx, blog__collectingQueryParametersWithAmplitudeInAdobeLaunchMdx, blog__interactingWithAnAdobeTargetActivityBasedOnTheMovementOfMercuryMdx, blog__usingDataFromAdobeAnalyticsInAdobeTargetOffersMdx]
+export const allBlogs = [blog__addingClickTrackingToShadowDomElementsMdx, blog__adobeAnalyticsAlertsInMicrosoftTeamsMdx, blog__buildingAnAdobeAnalyticsMetricsAndDimensionsDefinitionsPageWithTheAdobeAnalyticsApiMdx, blog__collectingQueryParametersWithAmplitudeInAdobeLaunchMdx, blog__interactingWithAnAdobeTargetActivityBasedOnTheMovementOfMercuryMdx, blog__usingDataFromAdobeAnalyticsInAdobeTargetOffersMdx, blog__githubSyncPart1Mdx]
