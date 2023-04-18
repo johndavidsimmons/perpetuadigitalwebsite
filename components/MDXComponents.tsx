@@ -9,6 +9,7 @@ import TOCInline from './TOCInline'
 import Pre from './Pre'
 import { BlogNewsletterForm } from './NewsletterForm'
 import type { Blog, Authors } from 'contentlayer/generated'
+import ReactPlayer from 'react-player'
 
 interface MDXLayout {
   layout: string
@@ -33,6 +34,7 @@ export const MDXComponents: ComponentMap = {
   pre: Pre,
   wrapper: Wrapper,
   BlogNewsletterForm,
+  ReactPlayer,
 }
 
 export const MDXLayoutRenderer = ({ layout, content, ...rest }: MDXLayout) => {

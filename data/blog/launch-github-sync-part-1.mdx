@@ -1,0 +1,115 @@
+---
+title: 'Syncing Adobe Launch/Tags with Github - Part 1: Setup'
+date: '2023-04-18'
+tags: ['adobe launch', 'adobe tags', 'javascript', 'github', 'automation']
+draft: false
+summary: 'How to use Github to build, sync, & deploy custom code directly to Adobe Launch/Tags'
+---
+
+## Down the rabbit hole
+
+I originally just wanted to sync one github file with one data element and bake some real
+version control into my more complex custom code data elements. Well, I did that, but I also accidentially
+made it possible to universally sync a single github file with multiple data elements across just as many properties.
+
+So why would you want to do this? Well, you might manage dozens of properties and hate having to make the
+same change in multiple places. Maybe you have some complicated code that augments a 3rd party library
+with web data (think sending marketing data along with chat sessions), I'm sure if you manage more than one
+property or work with a lot of custom code, you've though about setting this up from time to time. I fall into both of those categories.
+Plus, its just a cool integration that I figured _someone_ would do eventually, so why not me? A note before we get into it:
+
+**For the time being, everything here should be considered proof of concept!
+I am not a licensed financial advisor! Your mileage may vary! Proceed with caution!**
+
+![penguin crossing](https://images.ctfassets.net/on47yk52ubpi/eFoE7wCE4YD7oypDX0YK7/e94e6ec19b3261ada71a8667e17b406e/caution_sign.jpg)
+
+<figure>
+  <figcaption>Does anyone know where this is?!</figcaption>
+</figure>
+
+## So how exactly does it work?
+
+More hooks than a bait shop, more callbacks than a...teenager with a busted voicemail? I don't know, I couldn't think of anything...
+Here is what happens:
+
+- There is an initial setup of the data elements in Launch and files in Github. These things must first exist before we can sync them.
+- A Github push webhook sends a push event to an AWS API gateway. I'll call this **Github Webhook Gateway**
+- **Github Webhook Gateway** does some checks and says, _"yep this data needs to sync with Launch"_ and invokes a lambda called **Extract Github Data**
+- **Extract Github Data** pulls the actual file content from Github and formats it for the [Reactor API](https://experienceleague.adobe.com/docs/experience-platform/tags/api/overview.html).
+- Once the new file content is ready to be sent to Launch, **Extract Github Data** triggers another lambda called **Build Launch Development Library**
+- **Build Launch Development Library** takes the changes, incorporates them into a library, and builds a library.
+- Separately defined [Launch callback hooks](https://experienceleague.adobe.com/docs/experience-platform/tags/api/endpoints/callbacks.html?lang=en) listen for libraries built via Github changes and automatically publish them through dev > staging > prod.
+  <br></br>
+  <br></br>
+  <div style={{ border: '1px solid black' }}>
+    ![aws
+    diagram](https://images.ctfassets.net/on47yk52ubpi/1veno3QJdFZRF6ra2trhmR/7ab63da00a6c3d16174b49ddd5b75ae3/2d_launch_github_sync_diagram_cropped.png)
+  </div>
+
+<figure>
+  <figcaption>Once the initial setup is done, this is the flow!</figcaption>
+</figure>
+
+---
+
+## Launch Setup
+
+Before I can automatically sync data elements with Github files, those data elements need to _exist_ in their respective Launch properties _first_.
+This is necessary because I need to incorporate their data element ID(s) into Github. You can get the data element ID from the URL when working on a data element.
+
+Pro tip for those going further:
+there's a lot of Launch component IDs used in this project: data elements, libraries, environments, etc. The first 2 letters of the ID indicate
+what type of ID it is, so when looking at the URL of a data element, the property ID of that data element will start with `PR...`, the
+data element ID will start with `DE...`, etc.
+
+![DATA ELEMENT URL](https://images.ctfassets.net/on47yk52ubpi/6IowiCe5E01eRu7thTD1aj/5255612b327f66c4f625eeb1b44a613d/DATAELEMENTURL.png)
+
+<figure>
+  <figcaption>You can find your data element IDs in the URL when editing them</figcaption>
+</figure>
+
+## Github File Setup
+
+Here is the folder structure for my repo. I would consider this my master property settings. Its just data elements for now, but
+in the future there's no reason rules and other components can't also be included:
+
+```bash
+-repo
+    - dataelements
+        - dataelement1.js
+        - dataelement2.js
+        - etc etc
+    - rules
+        - rule files here...
+```
+
+[Sample Launch Property Repo](https://github.com/perpetua-digital/launch-property)
+
+Each Github file has the data element ID(s) it should sync with as a comment on the first line. The lambda extracts these IDs and uses them in the API calls that update the data elements in Launch.
+I'm not too worried about committing these IDs since, in practice, this will be a private repo _and_ a minified Launch library strips comments out of custom code anyway. Github push
+webhooks are also authenticated via a [Github Personal Access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token).
+
+```javascript
+// DE123456789... DE987654321...
+// [GITHUB] url
+// The github file should be exactly what should be in the custom code data element
+return `${window.location.protocol}//${window.location.host}${window.location.pathname}`
+```
+
+## The future...
+
+I am at a bit of a crossroads as to how I want to get this out to the people. Here's my options:
+
+1. Make all source code public and basically make this an open source project. I would use this blog to explain how each part works.
+   It _is_ complex and I don't think the average Launch/Tags user would take the time to set it up. Plus, implementing requires enterprise tools like AWS that some people might not be comfortable working in...
+2. Keep the code behind the scenes and build this out into a full fledged app with [App Builder](https://business.adobe.com/products/experience-manager/developer-app-builder.html). Easier to implement for
+   people, but won't be free. This would be a ton of work for me and I do still have a day job.
+
+Shoot me a message or comment what you think I should do!
+
+## Demo video
+
+This is the same video I previously posted on LinkedIn, but now you know why I have the data element ID
+in a comment _and_ notice that it doesn't come out as part of the data element on a website.
+
+<ReactPlayer url="https://www.youtube.com/watch?v=ppZrylP4Mn0" />
