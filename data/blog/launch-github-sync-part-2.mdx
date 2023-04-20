@@ -1,0 +1,91 @@
+---
+title: 'Syncing Adobe Launch/Tags with Github - Part 2: The Github Push Webhook'
+date: '2027-04-18'
+tags: ['adobe launch', 'adobe tags', 'javascript', 'github', 'automation']
+draft: false
+summary: 'How to use Github to build, sync, & deploy custom code directly to Adobe Launch/Tags - Part 2'
+---
+
+## The Github push webhook...
+
+After the setup that I mentioned in the previous post is completed, I can tap into the Github push webhook to kickoff the syncing between
+Github and Launch.
+This webhook will notify my API that some file changes have occurred in Github and that those changes that _may_ need to be updated in Launch.
+I say _may_ here because the Github push webhook will notify me of all repository changes and it will be up to me to
+determine what, if anything, needs to be synced with Launch.
+
+The github webhook also introduces the first layer of security in the form of a [Github personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). This ensures
+lets me verify that any data sent to it actually came from me.
+
+So what exactly is webhook? Off the top of my head, and by that, I mean ChatGPT, a webhook is:
+
+> a way for two applications to communicate with each other in real-time. \
+> It is a type of API (Application Programming Interface) that allows one application to send data to\
+>  another application automatically whenever a certain event occurs.
+>
+> Webhooks work by sending a notification to a URL endpoint that is specified by the receiving application.\
+> This notification typically contains a payload of data that describes the event that triggered the webhook.
+
+In order to start receiving notifications from Github via the push webhook and handling that data, I need to do 2 things:
+
+- Build and API endpoint for the webhook to send data to
+- Configure that endpoint I built in Github
+
+I'll start with building an endpoint...
+
+## My API for receiving Github data
+
+Fortunately for me, going super in depth about building and hosting endpoints is beyond the scope of this little blog thing I got going, but I
+_highly_ suggest reading about building APIs in [Flask](https://pythonbasics.org/flask-rest-api/) for Python (like mine is) or [Express](https://medium.com/makers-byte/building-a-restful-api-with-express-js-a-beginners-guide-dcb1a1e3520d) for Node.
+Once built, you then need to host your endpoint server publicly so Github can access it. Lots of options here, the most obvious (and the one I went with) AWS
+[web hook gateways](https://medium.com/mindorks/building-webhook-is-easy-using-aws-lambda-and-api-gateway-56f5e5c3a596).
+
+```python
+@app.route("/github-webhook-handler", methods=['POST'])
+@verify_github_webhook_secret
+def github_webhook():
+    try:
+        try:
+            payload = request.get_json()
+            modified_files = payload['head_commit']['modified']
+            author_name = payload['head_commit']['author']['name']
+            owner = payload['head_commit']['author']['username']
+            repo = payload['repository']['name']
+            ref = payload['ref']
+        except Exception:
+            return make_response(jsonify(error='Error parsing github data from request'), 400)
+
+        # find modified data elements files
+        modified_data_element_files = [
+            file for file in modified_files if file.startswith("dataelements")]
+
+        # the request was successful, no action needs to be taken
+        if len(modified_data_element_files) == 0:
+            return make_response(jsonify(message='No files in the data elements directory have been modified'), 204)
+
+        # everything is good - trigger the lambda - the lambda does the launch updating!
+        data = {
+            "message": "OK",
+            "modified_data_element_files": modified_data_element_files,
+            "author_name": author_name,
+            "owner": owner,
+            "repo": repo,
+            "ref": ref
+        }
+
+        # invoke the next lambda here
+        client = boto3.client('lambda')
+        response = client.invoke(
+            FunctionName='some fake name here',
+            InvocationType='Event',
+            Payload=json.dumps(data)
+        )
+        # return success
+        response_data = {
+            "statusCode": 200,
+            "body": data
+        }
+        return make_response(jsonify(response_data), 200)
+    except Exception as e:
+        return make_response(jsonify(error=f'Error {e}'), 500)
+```
