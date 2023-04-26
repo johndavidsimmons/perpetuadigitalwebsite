@@ -11,15 +11,15 @@ summary: 'How to use Github to build, sync, & deploy custom code directly to Ado
 After the setup that I mentioned in the [first post](https://www.perpetua.digital/blog/launch-github-sync-part-1) is completed,
 I can tap into the Github push webhook to kickoff the syncing between
 Github and Launch. This webhook will notify my API that some file modifications have
-occurred in Github and that those changes that _may_ require updates to Launch data elements.
-I say _may_ here because the Github push webhook will notify me of all file modifications in my
+occurred in Github and that those changes that _may_ require updates to Launch components.
+I say _may_ here because the Github push webhook will notify me of _all_ file modifications in my
 repository and it will be up to me to determine what, if anything, needs to be synced with Launch.
 
 The Github push webhook also introduces the first layer of security in the form of a
 [Webhook secret](https://docs.github.com/en/webhooks-and-events/webhooks/securing-your-webhooks#setting-your-secret-token).
 This allows me to verify calls made to the API. More on that later.
 
-So what exactly is webhook? Off the top of my head, and by that, I according to ChatGPT, a webhook is:
+So what exactly is webhook? Off the top of my head, and by that, I mean according to ChatGPT, a webhook is:
 
 > a way for two applications to communicate with each other in real-time. It is a type of API (Application Programming Interface) that allows one application to send data to \ another application automatically whenever a certain event occurs.
 >
@@ -34,20 +34,20 @@ I'll start with building an endpoint...
 
 ## My API for receiving Github push webhooks
 
-Fortunately for me, going super in depth about building and hosting API endpoints is
-beyond the scope of this little blog thing I got going. If you are new to such things, I
+Fortunately for me, going super in-depth about building and hosting API endpoints is
+beyond the scope of this little blog I got going here. If you are new to such things, I
 _highly_ suggest reading about building APIs in [Flask](https://pythonbasics.org/flask-rest-api/)
-for Python (like mine is) or [Express](https://medium.com/makers-byte/building-a-restful-api-with-express-js-a-beginners-guide-dcb1a1e3520d) for Node.
-Once built, you then need to host your endpoint server somwhere public so Github can access it.
-Lots of options here, the most obvious (and the one I went with) AWS
+for Python (what I used) or [Express](https://medium.com/makers-byte/building-a-restful-api-with-express-js-a-beginners-guide-dcb1a1e3520d) for Node.
+Once built, you then need to host your endpoint server somewhere public so Github can access it.
+Lots of options here, the most obvious (and easiest IMO) AWS
 [web hook gateways](https://medium.com/mindorks/building-webhook-is-easy-using-aws-lambda-and-api-gateway-56f5e5c3a596).
 
 Below is the [Flask route](https://exploreflask.com/en/latest/views.html) for my endpoint that will
 receive and handle pushes from Github. If you've never worked in Flask or made an API before, it might look a
-little complicated, but it really only does a couple things. Here's the highlights
+little complicated, and yes it is truncated for brevity, but it really only does a couple things:
 
 - `@verify_github_webhook_secret` is a Python decorator that makes sure any POST requests
-  to this route not only come from Github, but come from me specifically.
+  to this route not only come from Github, but come from me, specifically.
 - `modified_data_element_files` is a `list` of all the data element files that have been updated
   in this push. If there are _zero_ changed data element files, like if I updated a `README.md` file,
   the entire flow stops here. No need to sync with Launch.
@@ -112,35 +112,65 @@ By far, the easiest way to create and deploy AWS Lambdas and API Gateways is thr
 [Serverless](https://www.serverless.com/) framework. It takes care of the drudgery of uploading
 packages to AWS and has a nicer UI. Highly recommended.
 
-Once I get this API deployed, I'm going to have a publicly reachable route to POST to. First task complete. It is this
-URL that I then configure inside of Github.
+Once I get this API deployed, I'm going to have a publicly reachable route to POST to.
+First task complete. It is this URL that I will then configure inside of Github.
 
 My deployed API will have a route that will look _something_ like the URL below. Notice how the path `github-webhook-handler`
 is the path I defined in `@app.route` above.
 
 `https://fakedatahere.execute-api.aws-region-name-here.amazonaws.com/github-webhook-handler`
 
+---
+
 ## Setting up a Push webhook on a Github repo
 
 Now that I have my endpoint URL all set up and running in "the cloud",
 I need to tell my Github repo to post to it on Push events. To do that,
-I go into my Repo and got to `Settings > Webhooks > Add Webhook`.
+I go into my Repo and go to `Settings > Webhooks > Add Webhook`.
 
-![IMAGE OF ADD WEBHOOK SCREEN](https://images.ctfassets.net/on47yk52ubpi/3OVr7rQodGU65n9i6iZMiG/7f86e59fe320e74d868b34602e5ad2e9/Screenshot_2023-04-20_at_11.49.56_PM.png)
+![IMAGE OF ADD webhook SCREEN](https://images.ctfassets.net/on47yk52ubpi/3OVr7rQodGU65n9i6iZMiG/7f86e59fe320e74d868b34602e5ad2e9/Screenshot_2023-04-20_at_11.49.56_PM.png)
 
-<figure>
-  <figcaption>
-    The endpoint URL I made goes in `payload url` and I need to [generate a random
-    string](https://www.random.org/strings/) for a secret. SAVE IT SOMEWHERE SAFE!
-  </figcaption>
-</figure>
+The endpoint URL I made goes in `payload url` and I need to [generate a random
+string](https://www.random.org/strings/) for a secret and save it somewhere safe.
+Again, my `Secret` value is used in the `@verify_github_webhook_secret` decorator to verify
+requests that the API receives.
 
 Once the webhook is setup, I can QA that it's working by doing some push events and
 checking the **Recent Deliveries** section. If something is broken, like I pasted the wrong URL
-or I don't have my secret keys setup, errors will show here.
+or there is an authentication error, it will show here.
 
 ![IMAGE OF RECENT DELIVERIES](https://images.ctfassets.net/on47yk52ubpi/4x3o3ACbRyF7o2eq7xUFwp/8653cb21c4fe50e96a98b4be1bb4e14e/Screenshot_2023-04-20_at_11.51.55_PM.png)
 
 ## In action
 
-So all this happens in an instant, but here is what happens step by step (with pictures!!!!!)
+So there is not much to look at, but here is a recap of what happens in the first step of the *Github to Launch sync *flow when
+I update a file on Github that needs to be synced with a Launch component:
+
+1. I push to the `main` branch of my Github repo
+2. Github triggers the push webhook and sends a POST request to my API
+3. My API reads the data from the webhook request and determines if there are file changes that need to be updated in Launch.
+4. If changes need to be synced, the API gathers the information required to pull the actual file contents from Github (which takes place in the next step) and triggers the next lambda in the flow.
+
+Here is the response from the Push webhook showing my success message when I update my [host.js data element file.](https://github.com/perpetua-digital/launch-property/blob/main/data_elements/host.js)
+
+![recent delivery success](https://images.ctfassets.net/on47yk52ubpi/3WVlI9MZO586tSm2NsL9v5/47163aa6dbe67f5eebb3372f72aeaa9c/recentdeliverysuccess.png)
+
+I can't show the whole JSON response, but it should look familiar:
+
+```python
+data = {
+            "message": "OK",
+            "modified_data_element_files": modified_data_element_files,
+            "author_name": author_name,
+            "owner": owner,
+            "repo": repo,
+            "ref": ref
+        }
+
+```
+
+## Next up
+
+So I've been notified that a change has occurred that needs to be reflected in Launch.
+Next up, grab that actual contents of those file changes and prepare to send them to
+[the Launch API.](https://experienceleague.adobe.com/docs/experience-platform/tags/api/overview.html)
