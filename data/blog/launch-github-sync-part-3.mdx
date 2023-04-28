@@ -95,7 +95,8 @@ a front end is likely inevitable, but I digress...
 Since Github returns me the entire contents, I need to extract the Data element ID(s) that this file
 should be synced with and save it/them.
 
-Given the above Github file, this lambda's entire purpose is to build an array that looks like this:
+Given the above Github file, this lambda's entire purpose is to build an array that looks like the following.
+This final array will contain all the changes that need to be sent to Launch.
 
 ```javascript
 data = [
@@ -108,8 +109,6 @@ data = [
   },
 ]
 ```
-
-This final array will contain all the changes that need to be sent to Launch.
 
 ## Next up
 
