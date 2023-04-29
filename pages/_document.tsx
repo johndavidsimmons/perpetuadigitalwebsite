@@ -5,6 +5,10 @@ class MyDocument extends Document {
     return (
       <Html lang="en" className="scroll-smooth">
         <Head>
+          <script
+            src="https://assets.adobedtm.com/9d5ea4d031a2/94b8b3ffca90/launch-20d79a252cfc.min.js"
+            async
+          ></script>
           <link rel="apple-touch-icon" sizes="76x76" href="/static/favicons/apple-touch-icon.png" />
           <link
             rel="icon"
