@@ -1,0 +1,177 @@
+---
+title: 'Syncing Adobe Launch/Tags with Github - Part 4: Building Launch libraries programmatically'
+date: '2023-05-08'
+tags: ['adobe launch', 'adobe tags', 'javascript', 'github', 'automation']
+draft: false
+summary: 'How to use Github to build, sync, & deploy custom code directly to Adobe Launch/Tags - Part 4'
+---
+
+## So where exactly are we at?
+
+![step 3 aws diagram](https://images.ctfassets.net/on47yk52ubpi/5tFqSJp7eI2srx72geCELx/a822e81e9d968624fefe9b43faf3d50a/2d_launch_github_sync_diagram.png)
+
+In this step, I am calling an AWS Lambda called _Build Launch Development Library_ which will take
+my changed files from Github, modify their corresponding data elements, and build a Launch development library of the changes
+
+## Working with the Launch API, aka the Reactor API
+
+When making changes to Launch in the UI, almost every action you take is a call to the Reactor API. This is because Launch is completely API
+driven and is actually I why I am able to do this project in the first place. When working programmatically with the API, you must recreate exactly what you
+would do in the UI and there are more steps than you think. I ran into a couple road blocks due to skipping steps, usually around
+setting relationships, but as long as you follow the docs and think logically about what you would be doing if you were working in the UI,
+it will all click eventually.
+
+Speaking of the Launch API, depending on what you search for you'll get a couple things:
+
+- [https://developer.adobelaunch.com/api/](https://developer.adobelaunch.com/api/) - This is the old
+  documentation. It doesn't seems to be wrong, just a little dated.
+- [https://experienceleague.adobe.com/docs/experience-platform/tags/api/overview.html](https://experienceleague.adobe.com/docs/experience-platform/tags/api/overview.html)
+  This is the new documentation. Its a little more thorough and uses updated terms. I mostly used this one.
+
+Now its possible to use the Launch API without a library, but why put yourself through that?
+
+- **Python** - [https://github.com/pitchmuc/launchpy](https://github.com/pitchmuc/launchpy)
+- **Javscript/Nodejs** - [https://www.npmjs.com/package/@adobe/reactor-sdk](https://www.npmjs.com/package/@adobe/reactor-sdk)
+
+I ended up using the NodeJS SDK because its easier to deploy Javascript lambdas than trying to deal with Python packages.
+Adobe also has a nice authorization library on NPM for working with Experience Cloud APIs:
+
+- [https://www.npmjs.com/package/@adobe/jwt-auth](https://www.npmjs.com/package/@adobe/jwt-auth)
+
+## Steps to add a change to Launch library via the API
+
+So I've been notified that a file change occurred in Github that I need to sync with Launch. I've pulled the latest version of that file and extracted it's contents.
+The last thing to do is add those changes to a Launch library and build. The API follows more or less the same process as working in the UI.
+
+Assuming the changes needed apply to a single Launch property, here what my Launch lambda does once it receives the file contents from the previous lambda:
+
+1. [Initial setup, authenticate, etc.](https://github.com/adobe/reactor-sdk-javascript#usage)
+2. [Pull the existing data elements from Launch by Data element ID(s). Remember that data element IDs are part of the file contents on Github](https://github.com/adobe/reactor-sdk-javascript/blob/master/src/data-elements.js#L30)
+3. [Iterate data elements above, and apply changes needed. This creates a respective revision ID(s) for each data element.](https://github.com/adobe/reactor-sdk-javascript/blob/master/src/data-elements.js#L81)
+4. [Create a new development library using the truncated Github ref as a name](https://github.com/adobe/reactor-sdk-javascript/blob/master/src/libraries.js#L57)
+5. [Add data element revision IDs to newly created dev library](https://github.com/adobe/reactor-sdk-javascript/blob/master/src/libraries.js#L23)
+6. [Create a single use development environment](https://github.com/adobe/reactor-sdk-javascript/blob/master/src/environments.js#L18)
+7. [Add the development environment created above to my development library](https://github.com/adobe/reactor-sdk-javascript/blob/master/src/libraries.js#L250)
+8. [Build the development library](https://github.com/adobe/reactor-sdk-javascript/blob/master/src/builds.js#L13)
+
+## From Github to dev library
+
+![github ref](https://images.ctfassets.net/on47yk52ubpi/6wcyHHCOOtA2GCOMwaz0ND/cd258e3b4464103d5f5412fe77eae5f8/Screenshot_2023-05-01_at_3.26.53_PM.png)
+
+<figure>
+  <figcaption>File contents and Github commit ref</figcaption>
+</figure>
+
+![launch github library](https://images.ctfassets.net/on47yk52ubpi/1TviEV4TUUB3mz9urfmOVA/15fd3f13c81aba3827faab86acfc3c3e/Screenshot_2023-05-01_at_3.27.01_PM.png)
+
+<figure>
+  <figcaption>Ref used as library name</figcaption>
+</figure>
+
+![launch library contents](https://images.ctfassets.net/on47yk52ubpi/5Zi0zlcCYVUiZf2s8oCy25/faf5e84c0aba933924c5761f4b23954d/Screenshot_2023-05-01_at_3.27.31_PM.png)
+
+<figure>
+  <figcaption>Library contains the data element that corresponds to `test.js`</figcaption>
+</figure>
+
+![data element contents](https://images.ctfassets.net/on47yk52ubpi/1v9AJ1ybq5AtSydEoTu1rV/c439654563a4ca3270f71bcdc6f0d97b/Screenshot_2023-05-01_at_3.27.41_PM.png)
+
+<figure>
+  <figcaption>
+    I can't get all the proof that this is from the library into a screenshot, so just trust me here
+    :) Remember that a minified Launch library strips out comments
+  </figcaption>
+</figure>
+
+---
+
+## Launch Callbacks
+
+If you've never heard of [Launch callbacks](https://experienceleague.adobe.com/docs/experience-platform/tags/api/endpoints/callbacks.html?lang=en) before, you probably aren't alone.
+This somewhat obscure feature lets you tap into Launch UI events and do things based on them. A generic statement I know, but for example, if you wanted to, say, send
+a Slack message to a room when a new development environment is created, Launch callbacks would be how you set that up. There are 2 steps required to building a Launch
+callback action:
+
+- Build an API for the callback to post to. This is similar to the Github Push webhook API route I made before. Launch callbacks do _nothing_ on their own, they are just
+  notifications similar to the Github push webhook from my first post. A Launch callback needs an API to post to. Its that endpoint that _actually_ does the thing you want to do.
+- Update your property callback rules to post to that API when the thing you are wanting to track occurs.
+
+Using the Slack message example above, I would build an API endpoint that received POST data from Launch and sends a message to Slack. I would then
+use the [create a callback endpoint](https://experienceleague.adobe.com/docs/experience-platform/tags/api/endpoints/callbacks.html?lang=en#create)
+to add the API route I just created to the callback rules of my property. There some more details once you get into it, but that is the basic idea.
+
+## How I am using Launch callbacks
+
+Logic follows that if I am pushing to my `main` Github branch then I would like that change reflected in prod immediately.
+I am using Launch callbacks to automatically promote libraries from Development to Staging, and from Staging to Production.
+That is precisely what is happening in this step of the diagram:
+
+![launch callback diagram](https://images.ctfassets.net/on47yk52ubpi/5ptagJs46vXfuanec6g6wU/d939d98b5959e3826a1b643b39f3b2e5/2d_launch_github_sync_diagram_prod.png)
+
+<figure>
+  <figcaption>Launch callback functions take care of auto publishing</figcaption>
+</figure>
+
+When any development library gets successfully built in my property, Launch will notify my callback API endpoint. If that library has a name that starts with `Github@`, the endpoint
+will call the Launch API and automatically promote that library to Staging and build it. Subsequently, when the Staging library is successfully built, the process repeats itself.
+The endpoint checks if the library name starts with `Github@`, and if it does, the endpoint will automatically promote and publish that library.
+
+Truncated a bit for brevity, the endpoint looks something like this:
+
+```javascript
+// https://12345678.execute-api.amazon-region-here.amazonaws.com/launch-endpoint",
+app.post('/launch-endpoint', async (req, res) => {
+  try {
+    // ...
+    // ...
+    // after checking library name
+    if (libraryStage == 'development' && buildStatus == 'succeeded') {
+      await promoteLibrary(libraryId)
+      await buildStaging(propertyId, libraryId)
+    } else if (libraryStage == 'staging' && buildStatus == 'succeeded') {
+      await approveStaging(libraryId)
+      await setProdRelationship(libraryId, prodEnvId)
+      await publishLibrary(libraryId)
+    }
+    res.json({ message: 'library updated' })
+  } catch (e) {
+    res.json({ error: e })
+  }
+})
+```
+
+Looking at the Launch Callbacks for my property using the [List Callbacks](https://experienceleague.adobe.com/docs/experience-platform/tags/api/endpoints/callbacks.html?lang=en#list) method
+will look something like this:
+
+```javascript
+  "data": [
+    {
+      "id": "CB123456789",
+      "type": "callbacks",
+      "attributes": {
+        "created_at": "2023-05-06T20:52:43.507Z",
+        "subscriptions": [
+          "build.updated"
+        ],
+        "updated_at": "2023-05-06T20:52:43.507Z",
+        "url": "https://12345678.execute-api.amazon-region-here.amazonaws.com/launch-endpoint",
+        "created_by_email": "mytechacct@techacct.adobe.com",
+        "created_by_display_name": "mytechacct@techacct.adobe.com",
+        "updated_by_email": "mytechacct@techacct.adobe.com",
+        "updated_by_display_name": "mytechacct@techacct.adobe.com"
+      }
+    }]
+    // obj truncated...
+    //  ...
+    //  ...
+```
+
+I can see that my property has a single callback that is subscribed to the `build.updated` event. Any time a build is updated (i.e. build successfully, built unsuccessfully, etc),
+Launch will make a request to the API route I created above and the build and promote logic will run. If the build change doesn't meet the criteria for automatic promotion, then
+nothing happens.
+
+## In Action
+
+Its a lot more interesting to see this thing in action than to read about it!
+
+<ReactPlayer url="https://www.youtube.com/watch?v=loKG4xsnrkw" />
