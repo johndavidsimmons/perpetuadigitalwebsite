@@ -16,8 +16,7 @@ my changed files from Github, modify their corresponding data elements, and buil
 ## Working with the Launch API, aka the Reactor API
 
 When making changes to Launch in the UI, almost every action you take is a call to the Reactor API. This is because Launch is completely API
-driven and is actually I why I am able to do this project in the first place. When working programmatically with the API, you must recreate exactly what you
-would do in the UI and there are more steps than you think. I ran into a couple road blocks due to skipping steps, usually around
+driven and is actually why I am able to do this project in the first place. When working programmatically with the API, you must recreate exactly what you would do in the UI, and there are more steps than you think.. I ran into a couple road blocks due to skipping steps, usually around
 setting relationships, but as long as you follow the docs and think logically about what you would be doing if you were working in the UI,
 it will all click eventually.
 
@@ -93,7 +92,7 @@ a Slack message to a room when a new development environment is created, Launch 
 callback action:
 
 - Build an API for the callback to post to. This is similar to the Github Push webhook API route I made before. Launch callbacks do _nothing_ on their own, they are just
-  notifications similar to the Github push webhook from my first post. A Launch callback needs an API to post to. Its that endpoint that _actually_ does the thing you want to do.
+  notifications similar to the Github push webhook from my first post. A Launch callback needs an API to post to. It's that endpoint that _actually_ does the thing you want to do.
 - Update your property callback rules to post to that API when the thing you are wanting to track occurs.
 
 Using the Slack message example above, I would build an API endpoint that received POST data from Launch and sends a message to Slack. I would then
