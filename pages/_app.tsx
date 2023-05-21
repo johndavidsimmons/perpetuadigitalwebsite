@@ -12,6 +12,7 @@ import siteMetadata from '@/data/siteMetadata'
 // import GAScript from '@/components/analytics/GoogleAnalytics'
 import LayoutWrapper from '@/components/LayoutWrapper'
 import GTMContainer from '@/components/analytics/GTM'
+import Prehide from '@/components/analytics/Prehide'
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -19,6 +20,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <meta content="width=device-width, initial-scale=1" name="viewport" />
       </Head>
+      <Prehide />
       <GTMContainer />
       <LayoutWrapper>
         <Component {...pageProps} />
