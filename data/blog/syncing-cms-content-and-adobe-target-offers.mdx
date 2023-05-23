@@ -1,0 +1,259 @@
+---
+title: 'Syncing CMS images with Adobe Target Offers'
+date: '2023-05-23'
+tags: ['adobe target', 'contentful', 'webhooks', 'cms']
+draft: false
+summary: 'Using Webhooks to automatically create an Adobe Target offer out of CMS content'
+---
+
+## Contentful
+
+I use [Contentful](https://www.contentful.com/) to host the images for this blog. It is easy to use, has lots of functionality, and the best part: it has an
+excellent free tier. If you need to host any kind of content like images or blog posts, I highly suggest Contentful.
+
+I would like to have any image I upload to Contentful _automatically_ become an [offer](https://experienceleague.adobe.com/docs/target/using/experiences/offers/manage-content.html?lang=en) in Adobe Target. This way, if I want to
+use an image on my site and in Target, I don't have to upload it in 2 places. To do this, I am going to tap into [Contentful Webhooks](https://www.contentful.com/developers/docs/concepts/webhooks/)
+to pass uploaded file info straight to Target to create (or update) an offer. Let's get started!
+
+If you don't feel like reading, I don't blame you. Here's a video demo of what this post is all about:
+
+<ReactPlayer url="https://www.youtube.com/watch?v=yFu4tMYE59g" />
+
+Depending on when you're reading this, there might still be a dog picture on the [about page](https://www.perpetua.digital/about)!
+
+## Uploading to Contentful
+
+I'm not going to go super deep into Contentful content management and publishing as there's a lot of good documentation out there
+and frankly, its not that hard. The only import thing to know here is that content (images in my case) are uploaded into the CMS,
+given metadata like titles and tags, then published. Published is the _key_ word here as content can be uploaded without being published
+and I only want to create a Target offer for published images.
+
+![image uploaded but not published](https://images.ctfassets.net/on47yk52ubpi/3YcAlmGpJKGYL7sZeUPsUB/370e042913ff4dfb5420e601e45085fb/uploadedimagenotpublished.png)
+
+<figure>
+  <figcaption>
+    This image of me and Sammy has been uploaded, but I still need to publish it
+  </figcaption>
+</figure>
+
+## Contentful Publish Webhook
+
+Contentful offers a webhook for just about every action that can apply to a piece of content. Here, I am going to
+setup a webhook to fire when an Asset (aka an image file) is published. This will apply to whether the asset is newly published
+or if I re-publish an existing asset.
+
+Inside Contentful, go to _Settings > Webhooks > Add Webhook_. Since I only want to this webhook to fire when
+I publish an image, I'll set my trigger for _Specific Triggering Events_ and _Asset Publish_.
+
+![WEBHOOK SETUP IMAGE](https://images.ctfassets.net/on47yk52ubpi/4EI5kuN4hqEJxgaGy4pok1/b43279b9c091f987b717f362a4b4a89d/contentfulwebhooksetup.png)
+
+<figure>
+  <figcaption>This webhook will only fire when I publish an image</figcaption>
+</figure>
+
+The webhook setup above will send data that looks like this:
+
+```json
+{
+  "metadata": {
+    "tags": []
+  },
+  "sys": {
+    "type": "Asset",
+    "id": "abc123",
+    "space": {
+      "sys": {
+        "type": "Link",
+        "linkType": "Space",
+        "id": "abc123"
+      }
+    },
+    "environment": {
+      "sys": {
+        "id": "master",
+        "type": "Link",
+        "linkType": "Environment"
+      }
+    },
+    "createdBy": {
+      "sys": {
+        "type": "Link",
+        "linkType": "User",
+        "id": "abc123"
+      }
+    },
+    "updatedBy": {
+      "sys": {
+        "type": "Link",
+        "linkType": "User",
+        "id": "abc123"
+      }
+    },
+    "revision": 3,
+    "createdAt": "2023-05-16T12:43:26.894Z",
+    "updatedAt": "2023-05-16T12:50:26.041Z"
+  },
+  "fields": {
+    "title": {
+      "en-US": "johnandsammy"
+    },
+    "file": {
+      "en-US": {
+        "url": "//images.ctfassets.net/my/long/url/here/johnandsammy.png",
+        "details": {
+          "size": 60519,
+          "image": {
+            "width": 657,
+            "height": 718
+          }
+        },
+        "fileName": "johnandsammy.png",
+        "contentType": "image/png"
+      }
+    }
+  }
+}
+```
+
+I will take this data, specifically the _title_ and _file url_ and use them to create [offers in Target](https://experienceleague.adobe.com/docs/target/using/experiences/offers/manage-content.html?lang=en).
+It is important to note that I am creating _HTML Offers_ in Target and not [Target image offers](https://experienceleague.adobe.com/docs/target/using/experiences/offers/assets-working.html?lang=en).
+
+As far as I can tell, you cannot upload image files as image offers to Target via the [Target API](http://developers.adobetarget.com/api/).
+I suspect you _may_ be able to do this in AEM, but I am not sure.
+Even if I could upload images with the API, I am on free developer tier of Adobe Target and don't have access to use image offers in activities anyway :)
+
+## Building an API endpoint
+
+The final and most important part of the webhook setup is creating an endpoint for it to POST to when an image is published in my Contentful space.
+I'm not going to actually deploy this endpoint, but if you've read any of my other posts, you know I like to use
+[Serverless](https://www.serverless.com/) framework to build & deploy API Gateways to AWS Lambda.
+If you haven't worked with Serverless before that sentence sounds a lot more complicated than this process actually is. Serverless has an OOTB Flask
+API template so I'll just use that and run my endpoint server locally and use [Ngrok](https://ngrok.com) to do some proof
+of concept testing. The same setup will apply if I had an actually deployed API endpoint. That is, once the API is built, I need to add the
+endpoint URL to the webhook settings in Contentful.
+
+My webhook endpoint needs to do 2 things:
+
+- Accept POST data and verify that its an image publish request. _Technically_ I don't have to do this,
+  but its always good to never trust, always verify. In reality I would also bake into this some security
+  via a [personal access token](https://www.contentful.com/faq/personal-access-tokens/), but for just testing I don't need to do all that.
+- Collect the data from the Contentful payload and use it when calling the Target API to create or update an offer.
+  For full _CRUD_ capabilities I could also make an unpublish endpoint to delete offers from Target when images
+  are unpublished from Contentful.
+
+### Verify POST Data
+
+Given the JSON payload above, these 2 tasks are actually relatively simple. After verifying the request
+headers are of the correct type, I grab the file title and file url and create a string representing
+a generic HTML img element. It's this `<img>` element that will become the content of my Target offer.
+
+```python
+@app.route("/contentful-asset-publish", methods=['POST'])
+def contentful():
+    data = request.get_json()
+    headers = request.headers
+
+    # was the request an asset publish double check
+    if headers.get("X-Contentful-Topic") == "ContentManagement.Asset.publish":
+        if data['sys']['type'] == "Asset":
+            # get the url of the image
+            file_url = data['fields']['file']['en-US']['url']
+            file_title = data['fields']['title']['en-US']
+            image_element = f"<img src='https://{file_url}' alt='{file_title}'>"
+```
+
+### Talk to Target
+
+I'll spare you the drudgery of exchanging tokens ([thankfully Adobe is moving away from that](https://blog.developer.adobe.com/important-update-for-developers-using-adobe-apis-bf25110d3b4))
+and jump right in to where things get interesting. First, I'm going to grab _all_ the offers that exist in my Target instance.
+The paradigm I'm setting up here is all based on matching the _file title_ from Contentful and the _offer name_ from Target.
+If there is no match, create a new offer. If there is a match, just update the existing one with the new `<img>` element.
+
+```python
+# get all offers
+jwt_token = get_jwt()
+access_token = get_access_token(jwt_token)
+offers = requests.get(f"https://mc.adobe.io/{os.environ.get('tenant')}/target/offers", headers={
+    'authorization': f"Bearer {access_token}",
+    'cache-control': 'no-cache',
+    'Accept': 'application/vnd.adobe.target.v2+json',
+    'x-api-key': os.environ.get('client_id')
+})
+offers_dict = offers.json()
+
+# find by name=title lower?
+offer_matches = [item for item in offers_dict['offers']
+                    if item.get('name').lower() == file_title.lower()]
+
+# update if offer match on title
+if offer_matches:
+    # just grab whatever the first match is
+    offer_match = offer_matches.pop()
+    offer_id = offer_match.get('id')
+    update_url = f"https://mc.adobe.io/{os.environ.get('tenant')}/target/offers/content/{offer_id}"
+    update_headers = {
+        'authorization': f"Bearer {access_token}",
+        'cache-control': 'no-cache',
+        'content-type': 'application/vnd.adobe.target.v2+json',
+        'x-api-key': os.environ.get('client_id')
+    }
+    update_data = {
+        'name': offer_match.get('name'),
+        'content': image_element
+    }
+    update_offer = requests.put(
+        update_url, headers=update_headers, json=update_data)
+    pprint.pprint(update_offer.json())
+    message = "UPDATE"
+    print(message)
+
+# create if no offer match on title
+if not offer_matches:
+    create_url = f"https://mc.adobe.io/{os.environ.get('tenant')}/target/offers/content"
+    create_headers = {
+        'authorization': f"Bearer {access_token}",
+        'cache-control': 'no-cache',
+        'content-type': 'application/vnd.adobe.target.v2+json',
+        'x-api-key': os.environ.get('client_id')
+    }
+    create_data = {
+        'name': file_title,
+        'content': image_element
+    }
+    create_offer = requests.post(
+        create_url, headers=create_headers, json=create_data)
+    pprint.pprint(create_offer.json())
+    message = 'CREATE'
+    print(message)
+
+return make_response(jsonify({"file_url": file_url, "file_title": file_title, "image_element": image_element, "message": message}), 200)
+```
+
+This is a sample response from my API when publishing an image and creating a new offer. I put the message in there as a sanity check for me
+because the Target API return is just the offer metadata but doesn't say whether it was created or updated.
+
+```javascript
+{
+  "file_url": "https://contentfulcdn.com/my/asset/url/here.png",
+  "file_title": "my new image file",
+  "image_element": "<img src='https://contentfulcdn.com/my/asset/url/here.png' alt='my new image file'>",
+  "message": "CREATE"
+}
+```
+
+![api created offers](https://images.ctfassets.net/on47yk52ubpi/7evKuXHifdGFJMXZK0BwXm/1c0b4176095f2af3358afd769bce7c46/apicreatedoffers.png)
+
+<figure>
+  <figcaption>
+    Offers created by the Contentful webhook will show my API technical account address instead of
+    my username and show Target Classic as their creation source.
+  </figcaption>
+</figure>
+
+I can now use these images uploaded to Contentful in any of my Target activities!
+
+## In Action
+
+Congrats on reaching the end. You're reward is the same video as the intro. Leave me a comment while you're down here!
+
+<ReactPlayer url="https://www.youtube.com/watch?v=yFu4tMYE59g" />
