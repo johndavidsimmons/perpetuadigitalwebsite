@@ -5,6 +5,7 @@ const Prehide = () => {
     <>
       <Script strategy="afterInteractive" id="adobe-prehide">
         {`
+            console.log('begin prehide')
             !function(e,a,n,t){var i=e.head;if(i){
                 if (a) return;
                 var o=e.createElement("style");

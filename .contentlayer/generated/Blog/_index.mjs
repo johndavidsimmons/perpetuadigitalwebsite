@@ -2,6 +2,7 @@
 
 import blog__addingClickTrackingToShadowDomElementsMdx from './blog__adding-click-tracking-to-shadow-dom-elements.mdx.json' assert { type: 'json' }
 import blog__adobeAnalyticsAlertsInMicrosoftTeamsMdx from './blog__adobe-analytics-alerts-in-microsoft-teams.mdx.json' assert { type: 'json' }
+import blog__adobeTargetPrehidingInReactAndNextjsMdx from './blog__adobe-target-prehiding-in-react-and-nextjs.mdx.json' assert { type: 'json' }
 import blog__buildingAnAdobeAnalyticsMetricsAndDimensionsDefinitionsPageWithTheAdobeAnalyticsApiMdx from './blog__building-an-adobe-analytics-metrics-and-dimensions-definitions-page-with-the-adobe-analytics-api.mdx.json' assert { type: 'json' }
 import blog__collectingQueryParametersWithAmplitudeInAdobeLaunchMdx from './blog__collecting-query-parameters-with-amplitude-in-adobe-launch.mdx.json' assert { type: 'json' }
 import blog__interactingWithAnAdobeTargetActivityBasedOnTheMovementOfMercuryMdx from './blog__interacting-with-an-adobe-target-activity-based-on-the-movement-of-mercury.mdx.json' assert { type: 'json' }
@@ -12,4 +13,4 @@ import blog__launchGithubSyncPart_4Mdx from './blog__launch-github-sync-part-4.m
 import blog__syncingCmsContentAndAdobeTargetOffersMdx from './blog__syncing-cms-content-and-adobe-target-offers.mdx.json' assert { type: 'json' }
 import blog__usingDataFromAdobeAnalyticsInAdobeTargetOffersMdx from './blog__using-data-from-adobe-analytics-in-adobe-target-offers.mdx.json' assert { type: 'json' }
 
-export const allBlogs = [blog__addingClickTrackingToShadowDomElementsMdx, blog__adobeAnalyticsAlertsInMicrosoftTeamsMdx, blog__buildingAnAdobeAnalyticsMetricsAndDimensionsDefinitionsPageWithTheAdobeAnalyticsApiMdx, blog__collectingQueryParametersWithAmplitudeInAdobeLaunchMdx, blog__interactingWithAnAdobeTargetActivityBasedOnTheMovementOfMercuryMdx, blog__launchGithubSyncPart_1Mdx, blog__launchGithubSyncPart_2Mdx, blog__launchGithubSyncPart_3Mdx, blog__launchGithubSyncPart_4Mdx, blog__syncingCmsContentAndAdobeTargetOffersMdx, blog__usingDataFromAdobeAnalyticsInAdobeTargetOffersMdx]
+export const allBlogs = [blog__addingClickTrackingToShadowDomElementsMdx, blog__adobeAnalyticsAlertsInMicrosoftTeamsMdx, blog__adobeTargetPrehidingInReactAndNextjsMdx, blog__buildingAnAdobeAnalyticsMetricsAndDimensionsDefinitionsPageWithTheAdobeAnalyticsApiMdx, blog__collectingQueryParametersWithAmplitudeInAdobeLaunchMdx, blog__interactingWithAnAdobeTargetActivityBasedOnTheMovementOfMercuryMdx, blog__launchGithubSyncPart_1Mdx, blog__launchGithubSyncPart_2Mdx, blog__launchGithubSyncPart_3Mdx, blog__launchGithubSyncPart_4Mdx, blog__syncingCmsContentAndAdobeTargetOffersMdx, blog__usingDataFromAdobeAnalyticsInAdobeTargetOffersMdx]

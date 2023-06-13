@@ -1,0 +1,183 @@
+---
+title: 'Troubles setting up Adobe Target Prehiding in a NextJS app'
+date: '2023-06-13'
+tags: ['adobe target', 'react', 'nextjs', 'prehiding', 'ab testing']
+draft: false
+summary: 'Watch as I attempt to set up content prehiding for Adobe Target activities on this very blog!'
+---
+
+## The Adobe Target/Personalization Prehiding Snippet
+
+I did not write the code for this blog. It uses the [Tailwind Starter Blog Template](https://github.com/timlrx/tailwind-nextjs-starter-blog) which uses
+NextJS, React, and Tailwind CSS. 90% of the code I will never touch. I have, however,
+done some customization and deployed the Adobe Web SDK, amongst other things. Since I also
+use this site as a sandbox for proof-of-concept projects in Adobe Target, I have also setup [Adobe Target prehiding](https://experienceleague.adobe.com/docs/platform-learn/implement-in-websites/implement-solutions/target.html?lang=en#add-the-target-pre-hiding-snippet).
+I need to make sure that content doesn't flicker and hinder the user experience for my 7 readers :)
+
+I'm going to lay out how I have implemented prehiding on this site in the in hopes that it will help
+others get their own setup in order. My examples here use Adobe Web SDK prehiding setup, so the code will
+be a _little_ different from what is used for `AT.js`, but the concepts should be the same.
+
+As website building tools and javascript frameworks get more complicated, placing your prehiding code has become a bespoke process.
+Its even harder when you are only _kind of_ a developer like me. Telling someone _"Just put it at the top of the page"_ has sort of lost its meaning,
+as most pages these days are just almogomations of React components. What even is a _page_ anymore, man? Anyway...
+
+In the Web SDK specifically, its a challenge to have your [render personalization](https://experienceleague.adobe.com/docs/experience-platform/edge/personalization/rendering-personalization-content.html?lang=en)
+in sync with your data layer eventing, what is happening on your UI, and what Target is returning.
+
+If you are using the Adobe Web SDK you can find the Target prehiding snippet in the Web SDK extension:
+
+![prehide snippet location](https://images.ctfassets.net/on47yk52ubpi/18sQ2towWyVvysCfrb9pxZ/c9d4a59f0f4a5e8622d225ff85fed595/prehidesnippetlocation.png)
+
+<figure>
+  <figcaption>
+    I have yet to figure out what the **Prehiding Style** section above the code snippet section is
+    for. I mean I get what its says it will do, but I have never gotten it to really have an effect
+    on anything.
+  </figcaption>
+</figure>
+
+The code below is what you are copying out of the extension:
+
+```javascript
+<script>
+  !function(e,a,n,t){var i=e.head;if(i){
+  if (a) return;
+  var o=e.createElement("style");
+  o.id="alloy-prehiding",o.innerText=n,i.appendChild(o),setTimeout(function(){o.parentNode&&o.parentNode.removeChild(o)},t)}}
+  (document, document.location.href.indexOf("adobe_authoring_enabled") !== -1, ".personalization-container { opacity: 0 !important }", 3000);
+</script>
+```
+
+At a high level, this code gives you a class called `.personalization-container` to place on elements that may be affected by
+Target/personalization efforts. This class will make elements with it are invisible (opacity 0) for 3 seconds _or_ until a personalization response
+is sent back from the Adobe Edge Network.
+
+I have _slightly_ [modified my code](https://github.com/perpetua-digital/perpetuadigitalwebsite/blob/main/components/analytics/Prehide.tsx) to
+use `.prehide` as the class name instead of `.personalization-container` because the word "personalization" feels too ambitious for my little blog here.
+You can see my prehide code in [my repo](https://github.com/perpetua-digital/perpetuadigitalwebsite/tree/main) under `public > static > scripts > prehide.js`
+![my prehide code](https://images.ctfassets.net/on47yk52ubpi/zxfUdqX2qdFw67CdnY561/8bd95ed06a4b7a40a63f19b421098bc1/myprehidecode2.png)
+
+<figure>
+  <figcaption>
+    Throw a little console log in there too just as a sanity check. I should probably make that a
+    _satellite.log
+  </figcaption>
+</figure>
+
+I then load `prehide.js` in my main `_app` file which in turn loads the snippet on every page load and makes my `.prehide` class available.
+This method makes prehiding _work for me_, your experience may vary. By _works for me_,
+I mean that it prehides my elements tagged with the `.prehide` class until my Web SDK response returns with a personalization decision.
+That is exactly what the prehide snippet is supposed to do. However, this implementation method seems to go against everything the [NextJS documentation says to do
+when working with external scripts](https://nextjs.org/docs/pages/building-your-application/optimizing/scripts).
+Here are the other ways I tried to incorporate this snippet before I came to this setup:
+
+## Methods that didn't work
+
+### React Component
+
+First, I tried matching the original author of this template's structure of other analytics components and made a
+functional react component out of it.
+
+```javascript
+import Script from 'next/script'
+
+const Prehide = () => {
+  return (
+    <>
+      <Script strategy="afterInteractive" id="adobe-prehide">
+        {`
+            console.log('begin prehide')
+            !function(e,a,n,t){var i=e.head;if(i){
+                if (a) return;
+                var o=e.createElement("style");
+                o.id="alloy-prehiding",o.innerText=n,i.appendChild(o),setTimeout(function(){o.parentNode&&o.parentNode.removeChild(o)},t)}}
+                (document, document.location.href.indexOf("adobe_authoring_enabled") !== -1, ".prehide { opacity: 0 !important }", 3000);console.log("prehiding....")
+        `}
+      </Script>
+    </>
+  )
+}
+
+export default Prehide
+```
+
+This _kinda_ worked, depending on where I tried to load it. Importing into the `_app.tsx` file
+with the other analytics components would yield prehiding on _some_ tagged components, but seemed
+to be in a race with the hydration of the page elements.
+
+Changing the [script strategy](https://nextjs.org/docs/pages/building-your-application/optimizing/scripts#strategy)
+had no effect. A prehidden tagged component would load, be shown, dissappear, then re-appear with test content from Target.
+Good behavior, in theory, but the timing was off. I tried importing it into the [\_document.tsx file](https://nextjs.org/docs/pages/building-your-application/routing/custom-document), but that had no effect at all.
+I believe this is because code in `_document` is not read by the browser.
+
+### Inline Scripts
+
+Next up was formatting the component using [NextJS inline scripts](https://nextjs.org/docs/pages/building-your-application/optimizing/scripts#inline-scripts) formatting.
+I could not get the prehiding snippet to work at all with this formatting. I don't know why. I couldn't even get console.logs to work here either.
+
+```javascript
+<Script id="adobe-prehide">
+  {`!function(e,a,n,t){var i=e.head;if(i){
+  if (a) return;
+  var o=e.createElement("style");
+  o.id="alloy-prehiding",o.innerText=n,i.appendChild(o),setTimeout(function(){o.parentNode&&o.parentNode.removeChild(o)},t)}}
+  (document, document.location.href.indexOf("adobe_authoring_enabled") !== -1, ".prehide { opacity: 0 !important }", 3000);`}
+</Script>
+```
+
+Using the `dangerouslySetInnerHTML` to set the prehide snippet in a `next/script` component also
+had no effect on prehiding elements. I don't know why `¯\_(ツ)_/¯`
+
+## Prehiding in Action
+
+I have a few elements on this site tagged for prehiding. I am using the strategy of tagging individual
+elements instead of entire section so as to not hinder my web vitals scores.
+
+### Subhead
+
+This little subheadline on the homepage is gray by default, but I use Target to turn it green. The prehiding code prevents the default one from showing before Target can do its thing.
+
+![subhead default](https://images.ctfassets.net/on47yk52ubpi/1j34Yd1FrEPSUKr9dbNyeq/4a5c1b2a3a96c17932f617783fec3ba4/subheaddefault.png)
+
+![subhead gif](https://images.ctfassets.net/on47yk52ubpi/2Ql5IvLO73bq0pSGfjHJ1I/832f922e37cc7122647b431b262922fa/subheadprehidetarget.gif)
+
+<figure>
+  <figcaption>
+    Prehiding prevents the gray headline from flickering into the green one. (The shift is from the
+    page reload)
+  </figcaption>
+</figure>
+
+---
+
+### About me image
+
+![avatar prehide gif](https://images.ctfassets.net/on47yk52ubpi/4DK73lK82tM9BuyveW74tm/b7e1583a2bf3a4527a1faf0db3071003/avatarprehide.gif)
+
+The profile image here has the prehiding class so you'll see it load slightly after the rest of
+the content. If I had a Target activity that altered that image, the activity's content would
+replace the hardcoded image seamlessly.
+
+```javascript
+<Image
+  src={avatar}
+  alt="avatar"
+  width="192px"
+  height="192px"
+  className="prehide h-48 w-48 rounded-full"
+/>
+```
+
+<figure>
+  <figcaption>`prehide` class on the image react component</figcaption>
+</figure>
+
+## What did I learn?
+
+In the end, I got it to work, but I don't know exactly why. I guess what I learned here to keep trying until something works! If anyone has successfully integrated
+Target prehiding into a React/NextJS app such as mine, please reach out!
+
+Sometimes when working on this stuff I feel like JK Simmons' character in this clip
+
+<ReactPlayer url="https://www.youtube.com/watch?v=J6VjPM5CeWs" />
