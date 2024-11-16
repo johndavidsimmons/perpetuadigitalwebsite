@@ -1,0 +1,122 @@
+---
+title: 'Fallbacks and Truthy Chains - How I make bullet proof data elements in Launch'
+date: '2024-11-17'
+tags: ['adobe launch', 'data collection', 'debugging']
+draft: false
+summary: 'How to utilize fallback data elements to make sure you always get the data you need'
+---
+
+## The Problem
+
+You are the admin of a large Launch property used across many different
+URLs or parts of a website. Similar data points come in through different
+means depending on which code base you are in, whether the URL was built by
+a vendor with a WYSIWYG tool, what version of your data layer the site uses, etc.
+This is a problem because you need to collect the same data points everywhere
+and populate them into an eVar or XDM field, regardless of where they come from.
+
+## Example
+
+A real-world example of this problem, ironically, comes from a team
+I'm working with that uses Adobe App Builder (was this called Firefly
+at some point?). App Builder uses hashes for page routing but messes up
+our email campaign query parameters, so URLs end up looking like this,
+with the query string after the hash:
+
+`https://www.example.com/someapp/#/page?utm_campaign=abc123`
+
+This means that when my Launch property is on this page, the regular
+query parameter type data element won't work because window.location.search
+is an empty string due to the query string being after the hash.
+So, I need to devise some logic to check both my regular parameter and,
+if that is undefined, parse it from this hash. Enter the fallback.
+
+## Using Fallbacks
+
+Rather than writing custom code into my rule action logic, which
+I will never maintain, I can use a mapping table data element to
+handle this check for me. Shoutout to the creators of the mapping
+table extension! I will need three data elements: `utm_campaign_parameter`,
+`utm_campaign_fallback`, and `utm_campaign`.
+
+### utm_campaign_parameter
+
+This is my standard query parameter data element type from Launch
+
+### utm_campaign_fallback
+
+This is a custom code data element that parses a malformed url for
+the utm_campaign query parameter. It might look something like this
+
+```
+return new URLSearchParams(window.location.hash.split('?')[1]).get('utm_campaign')
+```
+
+### utm_campaign
+
+This is the data element I will actually use. It's a mapping table type that
+evaluates the page URL. If I'm on the `someapp` domain using the example URL
+above, I want to use my `utm_campaign_fallback` data element since I know
+this domain has malformed query parameters. Otherwise, I will use the
+`utm_campaign_parameter` data element, which should work normally on other
+domains. I name this data element simply utm_campaign because that's what
+it returns, regardless of the source.
+
+This works because the mapping table evaluates in order.
+If `someapp` is found in the URL, the first row returns.
+If it's not found, my second, more generic case will match,
+and that data element will be returned.
+
+![mapping table](https://images.ctfassets.net/on47yk52ubpi/2usb4YHSfttNT93jIHPUz5/c02c8042686d2cc2ab52a1909f100640/mappingdataelement.png)
+
+<figure>
+  <figcaption>Mapping table, the goat extension</figcaption>
+</figure>
+
+## Truthy Chain
+
+The second method is for situations where things are a little murkier,
+and you don't know where your data will come from. Say I need to set my
+campaign parameter. It might be in `utm_campaign`, or it might be another
+parameter. Maybe it comes from a data layer event or a cookie. Who knows?
+Enter what I call the truthy chain.
+
+Truthy chain data elements work like this: I take my known data sources,
+order them by reliability (or just throw them all in and see which one works),
+and return the first one that isn't undefined. Incorporating a truthy
+chain data element into my previous example would look like this.
+Assume here that my campaign variable can be in different query
+parameters or come through various sources.
+
+### campaign data element
+
+```javascript
+const campaignSources = [
+  _satellite.getVar('other_campaign_parameter'),
+  _satellite.getVar('other_campaign_fallback'),
+  _satellite.getVar('campaign_cookie'),
+  _satellite.getVar('utm_campaign_fallback'),
+  _satellite.getVar('utm_campaign_parameter'),
+  _satellite.getVar('campaign_from_session_storage'),
+  // etc etc
+]
+return campaignSources.find((dataElement) => dataElement)
+```
+
+This data element will iterate through the list and return the first
+truthy value (not `undefined`). This assumes my property is configured to
+return `undefined` for empty data elements instead of empty strings.
+
+So on my above example URL with the utm_campaign parameter in the hash,
+the data element `utm_campaign_fallback` is the first data element that contains
+a value. So the truthy chain data element will return that one. If the 'campaign_cookie'
+data element was defined, the truth chain would return that one since it appears in
+the list ahead of the utm fallback data element.
+
+Using this approach in a data element keeps the "checking" logic out of
+my action code and allows me to look in multiple places for the same data.
+Of course, the most ideal setup would be to configure the site to send
+consistent data in the same way every time, but in today's modern society,
+that's not always possible.
+
+I use this truthy chain data element paradigm a lot. Maybe I should make an extension…

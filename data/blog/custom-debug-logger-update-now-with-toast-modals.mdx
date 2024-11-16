@@ -1,0 +1,60 @@
+---
+title: 'Custom Debug Logger extension update - now with toast modals!'
+date: '2024-11-18'
+tags: ['adobe launch', 'data collection', 'debugging', 'launch extension']
+draft: false
+summary: 'How to use the newest version of the custom debug logger'
+---
+
+![demo gif](https://images.ctfassets.net/on47yk52ubpi/49omRXScttMc0J4Sjk6EXr/15959af127f3800347e0b2a682cf1671/modalpopgif.gif)
+
+<figure>
+  <figcaption>Rule fire on H1 click shows debug toast modal</figcaption>
+</figure>
+
+## No more searching the console
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/w0vCj0B920M?si=bWBAY2Mn5tII6x_Z"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  allowFullScreen
+></iframe>
+
+Checking the console for rule "fired" debug messages can get really annoying, especially if you have a lot of rules
+or if your rules have generic names. It's not just rules. I log information for myself all the time
+using \_satellite.logger or, yes, even console.log from time to time. To this, I say never again. Well, not never again,
+but at least not as much.
+
+![tile](https://images.ctfassets.net/on47yk52ubpi/4AOPl6HELoTS0dAwCrIym2/a573be660cdb6ddbfffe3dbf86a7cfe6/Screenshot_2024-11-15_at_2.57.58_PM.png?h=200)
+
+Instead of checking the console, with the newest version of the Custom Debug Logger extension, you can write toast modals that appear when rules fire.
+Along with the rule name, you can include any message or data you want. Even logging the value of data elements!
+What will you do with all the free time you'll save not having to search the console?
+Before you ask: no, these modals won't hijack your users' experience since they only fire when debug mode is on, so your dev team can't use Launch as their personal modal builder.
+
+![modaloverview](https://images.ctfassets.net/on47yk52ubpi/6WbnrHHZhgo2V95ltM9Zyf/19c738533b54d6ea16eaf9a3ae1015ec/cbl-highlight.png)
+
+<hr></hr>
+If you're a purist who loves the console, I've made it at least 8% more fun for you. The latest
+update to Custom Debug Logger also lets you write debug logs with custom emojis and color schemes.
+Does it make your data better? Technically no, but isn't it fun to see a heart emoji in the console
+as a reminder that love is the only thing that truly matters in this world? Anyway…
+
+![log](https://images.ctfassets.net/on47yk52ubpi/22aABwE7oAm33yJ9MoR6et/228790622c9dde56d8bf7c617c981bf2/colorLog.png)
+
+## How to use it
+
+I probably don't need to spell this out, but I haven't written a blog post in like 18 months, so here we are.
+Custom Debug Logger tools can be found in rule actions.
+Select “Toast” or “Log,” customize to your heart's content, and check out the results.
+Personally, I use this when doing QA on a flow with major milestones.
+For example, a modal pops on my `scAdd` and `purchase` events and shows me the value of my products data element.
+This way, I don't have to dig through the console or find it in the official debugger extension logs
+which I inevitably forgot to lock to my current window anyway.
+
+Adobe doesn't tell me if anyone actually uses this, so here's the deal:
+if you comment on this post with a URL you work on that has Custom Debug Logger installed, I'll Venmo you $5. Yes, I'm serious.
