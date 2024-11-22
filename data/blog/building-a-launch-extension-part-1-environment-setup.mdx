@@ -1,0 +1,314 @@
+---
+title: 'Building a Launch Extension with Modern Tools: React, Typescript, and Adobe Spectrum'
+date: '2024-11-24'
+tags: ['adobe launch', 'typescript', 'javascript', 'react', 'launch extension']
+draft: false
+summary: 'Part 1 in a series where I build a Launch extension. This part covers up setting up the development environment and how to incorporate React, Typescript, and the Adobe Spectrum design system.'
+---
+
+# Intro
+
+In my recent post about data elements, I showed how to use a concept I call the "truthy chain" where you
+return the first truthy value from an array of data elements. This lets you create a sort of information
+gathering priority list. For example, if my campaign value isn't in the URL, look in the data layer, then
+look in a cookie, and return the first value you find. I use this setup a lot, and I like making extensions,
+so here we are.
+
+I thought this was a great idea worthy of an extension. Turns out this is already part of the Evolytics Data Element
+Assistant extension. Kudos to them! I found out this information after recording the demo videos and writing this
+entire blog post so I won't actually be building truthy chain as its own extension, but it wasn't all for naught,
+as the information is still worthwhile to write down. Enjoy!
+
+# Repository
+
+All the code I demonstrate can be found here:
+[https://github.com/johndavidsimmons/react-typescript-spectrum-launch-extension-example](https://github.com/johndavidsimmons/react-typescript-spectrum-launch-extension-example)
+
+# Reactor Scaffold
+
+On this side of things, Launch is called Reactor. Adobe's Reactor scaffold tool does a lot of setup for you in
+regards to folder structure. I here I make a new folder called `truthyChain` and run
+
+```bash
+npx @adobe/reactor-scaffold
+```
+
+This will walk you through a setup flow and generate the folder structure and files needed for a Launch extension.
+
+After running Reactor Scaffold, it has generated for me an extremely basic Launch extension that will run locally
+in what they call the Reactor Sandbox. Basically, a stripped down
+version of Launch meant for local development of extensions. To startup the sandbox, run:
+
+```bash
+npx @adobe/reactor-sandbox
+```
+
+Reactor sandbox will spit out a url to go to see your Launch development sandbox.
+
+## Video Tutorial on Scaffold and Sandbox
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/fTr0PhqW78k?si=_y6ih3bU5NO13lgU"
+  title="YouTube video player"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  allowFullScreen
+></iframe>
+
+<hr></hr>
+
+# Installing Dependencies
+
+The Reactor Scaffold tool is in need of some updating, as it generates files for you and assumes
+you want to work in plain HTML and JS. I definitely don't want to do that. React is way easier, safer,
+and for me faster to write. Also, I want to use Adobe's React Spectrum UI library (the same library that Launch uses)
+so that I can make my extension look halfway decent.
+
+I want to write Typescript since it's the current year and all. So I will set that up as well. I will also
+need a way to compile my files from Typescript/React to the plain HTML files that the Reactor library wants. I will use webpack
+for that.
+
+The first thing to do is `init` an npm project since scaffold doesn't do this. This will give me a `package.json` file so
+I can install further dependencies. The `-y` flag skips a bunch of setup questions that I either don't care about or will fill in later.
+
+```bash
+npm init -y
+```
+
+Now to install a bunch of stuff...
+
+Here I am installing React so I can write my extension views with React components
+and Typescript so I can do that with the all the benefits of TS over vanilla JS.
+
+```bash
+npm i typescript react react-dom @types/react @types/react-dom
+```
+
+Reactor scaffold won't just compile my TS files to the plain HTML it needs for views. I need to do that on my own
+so enter webpack. I will show the webpack configuration a little later.
+
+```bash
+npm i webpack webpack-cli webpack-dev-server html-webpack-plugin ts-loader style-loader
+```
+
+I'm also going to include Babel here
+since I think when passing settings around Reactor you need to do it in a vanilla JS file that may need to be transpiled from es6 to basic JS.
+I'm not sure if I will use it yet, but just in case.
+
+```bash
+npm i @babel/core @babel/preset-env @babel/preset-react @babel/preset-typescript babel-loader
+```
+
+Usually you don't have to do all this stuff anymore since things like `create-react-app` just set this all up for you; but
+since I need to compile specific things into specific directories, here we are.
+
+## Video Demo on my environment setup
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/qKJ7JDk-vMg?si=PkoiClUCSXjKc5Bp"
+  title="YouTube video player"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  allowFullScreen
+></iframe>
+
+## Webpack
+
+### webpack.config.js
+
+```javascript
+const path = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+
+module.exports = {
+  entry: './src/index.tsx',
+  output: {
+    path: path.resolve(__dirname, 'src/view/dataElements'),
+    filename: 'bundle.js',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(ts|tsx)$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+        },
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'images/[name][hash][ext]',
+        },
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[hash].[ext]',
+              outputPath: 'fonts',
+            },
+          },
+        ],
+      },
+    ],
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/view/ViewTemplate1.html',
+      filename: 'truthyChain.html',
+      inject: 'body',
+      templateParameters: {
+        title: 'Truthy Chain Data Element',
+      },
+    }),
+  ],
+  devServer: {
+    static: {
+      directory: path.resolve(__dirname, 'src/view/dataElements'),
+    },
+    port: 3001,
+    open: true,
+    hot: true,
+    compress: true,
+    historyApiFallback: true,
+    watchFiles: ['src/**/*.js', 'src/**/*.ts', 'src/**/*.tsx', 'src/view/dataElements/**/*.html'],
+  },
+  resolve: {
+    alias: {
+      images: path.resolve(__dirname, 'images'),
+    },
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+  },
+}
+```
+
+This is my webpack configuration file. It is what makes all the modern development I show in the video possible.
+Mainly building in React TS files with HMR enabled and building a .html file to a specific directory.
+
+The important parts:
+
+- **Loaders**:
+
+  - Handles `.ts` and `.tsx` files using `ts-loader`.
+  - Transpiles `.js` files with `babel-loader`, excluding `node_modules`.
+  - Processes `.css` files with `style-loader` and `css-loader`.
+  - Manages image assets (e.g., `.png`, `.jpg`, `.svg`) with hashed filenames in an `images/` folder.
+  - Loads font files (e.g., `.woff`, `.ttf`) with `file-loader`, saving them in a `fonts/` folder.
+
+- **HTML Template**:
+
+  - Uses `HtmlWebpackPlugin` to create `truthyChain.html` from `ViewTemplate1.html`.
+  - Injects the bundled script into the HTML body and sets the title to "Truthy Chain Data Element."
+
+- **Development Server**:
+
+  - Serves files from `src/view/dataElements`.
+  - Runs on port `3001` with hot reloading, file watching, and compression enabled.
+  - Supports `historyApiFallback` for single-page application routing.
+
+- **Aliases and Extensions**:
+  - Defines an alias `images` for importing files from the `images` directory in case I want to add like a demo image
+  - Resolves `.ts`, `.tsx`, `.js`, and `.jsx` file extensions for module imports.
+
+## React
+
+This part of the setup will likely vary in a larger extension with a lots of views, but here is what works for me.
+In my `src/` directory I need 2 files: `App.tsx` and `index.tsx`
+
+### App.tsx
+
+This file may be unnecessary at this point, but may come in handy if my extension front end grows in complexity.
+This where I will return individual views wrapped in the main spectrum theme
+
+```javascript
+import { Provider, defaultTheme } from '@adobe/react-spectrum'
+import TruthyChain from './components/TruthyChain'
+
+function App() {
+  const { title } = document
+  return (
+    <Provider theme={defaultTheme}>
+      <TruthyChain />
+    </Provider>
+  )
+}
+
+export default App
+```
+
+### index.tsx
+
+This is my entry point. React will inject the app into `#root` div in ViewTemplate1.html
+
+```javascript
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+// Create a root and render the App component into it
+const root = ReactDOM.createRoot(document.getElementById('root')!);
+root.render(<App />);
+
+```
+
+### ViewTemplate1.html
+
+This is the html template which all my views will use since they all need to load the `extensionbridge.js` file.
+They will also receive a dynamic `title` as well. This isn't necessary since I have a single view here, but
+its good to setup just in case.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://assets.adobedtm.com/activation/reactor/extensionbridge/extensionbridge.min.js"></script>
+  </body>
+</html>
+```
+
+### package.json
+
+In order get webpack to do its thing, I need to add some commands to `package.json`
+
+`dev` will set up my local server where I can work on the view files directly and `build` is
+for when I want to actually compile them and try them out in the sandbox.
+
+```javascript
+"scripts": {
+    "dev": "webpack serve --mode development",
+    "build": "webpack --mode production"
+  }
+```
+
+```bash
+npm run dev
+```
+
+## Conclusion
+
+Now I can quickly build extension views using Adobe's own UI library and incorporate them into my Launch Extension!
