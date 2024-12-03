@@ -1,0 +1,204 @@
+---
+title: 'Finding broken data elements with Adobe Experience Platform Assurance'
+date: '2024-12-05'
+tags: ['adobe launch', 'debugging', 'javascript', 'adobe assurance', 'adobe experience platform']
+draft: false
+summary: 'How to use AEP Assurance validation functions to identify broken data elements when debugging a website Launch Property'
+---
+
+# The AEP Debugger Extension
+
+I am going to skim over a bit on how to use the [AEP Debugger Extension](https://experienceleague.adobe.com/en/docs/experience-platform/debugger/home)
+because if the title of this blog enthused you enough to make it this far, odds are you probably know how to use it already.
+
+Basically, when QA-ing front end data of a web Launch deployment that utilizes the Web SDK you can view every request sent to the Edge
+by going to
+
+**AEP Debugger > Experience Platform Web SDK > Edge Transactions > Connect to Remote**.
+
+Pro tip: Name your session so it doesn't get lost in the sea of unnamed sessions inside
+[Adobe Assurance](https://experienceleague.adobe.com/en/docs/experience-platform/assurance/home).
+In the interest of continuity, assume I have already saved an AEP Web SDK debug session with Edge transaction hits to Adobe Analytics in it.
+
+![log](https://images.ctfassets.net/on47yk52ubpi/UZj4LxCGgkIv6wtWYCCGd/1b1976097cca8c6cf43fa9ebb57c21c6/sessionlog.png)
+
+# The default validation function
+
+You can find the Validation Editor on the side menu inside Assurance. Here you can write and save your
+[own custom functions](https://github.com/adobe/griffon-validation-plugins/wiki/Writing-a-Validation-Function) to check
+your session for errors/bad data/whatever else you may need to look at programmatically.
+
+Read the docstring here at your leisure, but just know that these functions take the events from your session,
+you write code to check/validate/QA them, and you return whether your validation was successful or not.
+
+```javascript
+/**
+ * a Validation Plugin is a single function with the intent to validate one thing and one thing only
+ *
+ * @param {Object[]} events may be a subset of all the events in a session.
+ * @param {string} [params] an optional parameter that a validation function can receive.
+ * @returns {Object} validation - The validation result.
+ * @returns {string} validation.message - The validation message to display in the results.
+ * @returns {string[]} validation.events - An array of event uuids to be reported as matched or not matched.
+ * @returns {('matched'|'not matched'|'unknown')} validation.result - The validation result. This should be an enumerated value.
+ * @returns {ValidationResultLink[]} validation.links - An array of validation result links (see definition below).
+
+ * A Validation Result Link * @typedef {Object} ValidationResultLink
+ * @property {('doc'|'product'|'plugin')} type - plugin should navigate to other plugins; others to outside references.
+ * @property {string} url.
+ */
+function(events, params) {
+  return {
+    message: 'PASSED!',
+    events: [],
+    links: [],
+    result: 'matched'
+  };
+}
+```
+
+Assurance is stilled referred to as `Griffon` in a lot of documentation. It's really more of a mobile tool than a web tool.
+It goes surprisingly deep for those who care to learn:
+
+- [Griffon Toolkit Github](https://github.com/adobe/griffon-toolkit)
+- [Griffon Toolkit Docs](https://opensource.adobe.com/griffon-toolkit/)
+
+## Broken data elements in a workspace
+
+Doing validation functions on a one off basis is usually more work than its worth. Where it does come in handy though is doing
+more generic types of validations that can apply to every session. Something I definitely want to check every session
+for is broken data elements making their way to analytics.
+
+### Setting a broken data element on purpose
+
+Here I am using a non existent data element as my eVar1 setting in an XDM data element. Maybe I didn't make it yet or forgot to add it to
+my build library, regardless, since `somedataelement` doesn't exist evar1 will be set literally to `%somedataelement%`.
+
+![broken data element](https://images.ctfassets.net/on47yk52ubpi/4iRAawJoYbFfcPpmjoMub4/cf3c1d4413db32bf31e49bfd0ed0b3b0/brokende.png)
+
+When you see the double percentage signs in workspace, you got yourself a broken data element!
+I want to find these in my session using Assurance Validation!
+
+### Some Workspace Dashboard
+
+| eVar1               | Occurrences |
+| ------------------- | ----------- |
+| %some data element% | 1029        |
+| foo                 | 454         |
+| bar                 | 433         |
+| baz                 | 322         |
+
+<hr></hr>
+
+# My Broken Data Element Finder Validation Function
+
+**NOTE: Using the validation function editor is an exercise in stoic patience. The editor is finicky and will
+sometimes fail to upload, retrieve, or save your function. Always work in a separate
+code editor and paste your code into the validation function window. You have been warned**
+
+**[Github Gist for this function is here](https://gist.github.com/johndavidsimmons/fd83f54ce1093496dd3bd80c0b652a34)**
+
+```javascript
+function(events, params) {
+  const processedHits = events.filter(e => e.vendor === "com.adobe.analytics.hitdebugger")
+  const allEvarValues = processedHits.map(item => Object.values(item.payload.evars)).flat()
+  const allPropValues = processedHits.map(item => Object.values(item.payload.props)).flat()
+  const dataElementSyntaxRE = '^\%.+\%$'
+  const brokenDataElements = [
+    ...allEvarValues,
+    ...allPropValues
+    ]
+    .filter(val => val.match(dataElementSyntaxRE))
+  return {
+    message: brokenDataElements.length ?
+        `Broken Data Element: ${JSON.stringify(brokenDataElements)}` :
+        'No Broken Data Elements!',
+    events: [],
+    links: [],
+    result: brokenDataElements.length ?
+        'not matched' :
+        'matched'
+  };
+}
+```
+
+## Filtering Adobe Analytics Hits
+
+All validation functions by default receive every event that occurred in the debug session in the form of the `events` parameter.
+Depending on your implementation, this could be many hits to
+different products. Since I only want to look at evar and prop values from fully processed Adobe
+Analytics hits, I filter those hits out by the `vendor` key.
+This makes it so I'm only working with this hits I want to validate.
+
+```javascript
+const processedHits = events.filter((e) => e.vendor === 'com.adobe.analytics.hitdebugger')
+```
+
+Next, I'm extracting the evar and props values into their own arrays. The dimension data in each hit is in nested objects and arrays, so
+by flattening them I turn an array of arrays into a single array of strings. Then I merge all my evar and prop
+values into a single array to inspect.
+
+```javascript
+// dimenions = [['foo', 'bar'], ['buzz', 'bazz']] flat() => ['foo', 'bar', 'buzz', 'bazz']
+const allEvarValues = processedHits.map((item) => Object.values(item.payload.evars)).flat()
+const allPropValues = processedHits.map((item) => Object.values(item.payload.props)).flat()
+```
+
+## Filtering for broken data element values
+
+Now that I have all my evar and prop values for this session. I can inspect each value and
+see if it matches the telltale syntax of a broken data element: a string bracketed by percentage signs.
+This is a low hanging fruit QA, but its much easier and faster to find them this way than in some dashboard
+a month from now.
+
+I'm merging together my props and evars array, and searching for strings that match the data element
+syntax regex and savings those matches into their own array called `brokenDataElements`.
+If the `brokenDataElements` array has any values in it, this validation will not pass.
+
+```javascript
+const dataElementSyntaxRE = '^%.+%$'
+const brokenDataElements = [...allEvarValues, ...allPropValues].filter((val) =>
+  val.match(dataElementSyntaxRE)
+)
+```
+
+## Return Values
+
+The new validation function docstring shown when you make a new function spells out what to return.
+I've deleted it here, but its helpful to keep for reference when working.
+You would think something like this would be a
+boolean return, but alas, you must return an object with a `result` key that has `matched` or `not matched` as a string.
+Here I am using a ternary to check whether the
+`brokenDataElements` array is empty. If it is, then the validation has passed. If it has values, the validation
+has failed and the violating values will be logged in the message.
+
+```javascript
+return {
+  message: brokenDataElements.length
+    ? `Broken Data Element: ${JSON.stringify(brokenDataElements)}`
+    : 'No Broken Data Elements!',
+  events: [],
+  links: [],
+  result: brokenDataElements.length ? 'not matched' : 'matched',
+}
+```
+
+There are extra steps I could take here, like adding the UUIDs of the hits where the data element syntax
+was found to the events array in the return object `events` key. This time that is unnecessary since I will most likely be going
+straight to Launch anyway to make my fixes. I would do that though if I were working with a very large session or my
+results were somehow ambiguous.
+
+## Validation Summary
+
+After writing and saving the function, I can now see it in the validation summary where it can be run against any session that is recorded.
+Recording a session, then looking at the validation summary, I will be able to identify broken data elements instantly.
+Note the validation summary `category` is custom.
+
+![validation function](https://images.ctfassets.net/on47yk52ubpi/3ErKcBaC3TRxPjNQtg4zEy/3ee462b8fe62d1c524ebbb9e7cd07a4d/validationfunction.png)
+
+![validation results](https://images.ctfassets.net/on47yk52ubpi/5GxjWNIViJvc905k9q5vnW/46ec832600cd143655de0bdbb99e8569/validationresults.png)
+
+**Great Success**
+![validation success](https://images.ctfassets.net/on47yk52ubpi/3LSMz8ffGJLzIx5UyuCFmm/f2ddb341923088f08afb77d5f4a6db5a/validationsuccess.png)
+
+There we go! Now I can record an entire analytics session and have Assurance check for broken data elements for me!

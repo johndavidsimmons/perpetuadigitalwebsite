@@ -130,3 +130,6 @@ dist
 .DS_Store
 notes.txt
 .vscode
+
+# Contentlayer
+.contentlayer
