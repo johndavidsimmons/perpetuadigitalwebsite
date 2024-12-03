@@ -1,7 +1,12 @@
 {
   "title": "Syncing CMS images with Adobe Target Offers",
   "date": "2023-05-23T00:00:00.000Z",
-  "tags": ["adobe target", "contentful", "webhooks", "cms"],
+  "tags": [
+    "adobe target",
+    "contentful",
+    "webhooks",
+    "cms"
+  ],
   "draft": false,
   "summary": "Using Webhooks to automatically create Adobe Target offers out of CMS content",
   "body": {

@@ -1,7 +1,13 @@
 {
   "title": "Building a Launch Extension with Modern Tools: React, Typescript, and Adobe Spectrum",
   "date": "2024-11-24T00:00:00.000Z",
-  "tags": ["adobe launch", "typescript", "javascript", "react", "launch extension"],
+  "tags": [
+    "adobe launch",
+    "typescript",
+    "javascript",
+    "react",
+    "launch extension"
+  ],
   "draft": false,
   "summary": "Part 1 in a series where I build a Launch extension. This part covers up setting up the development environment and how to incorporate React, Typescript, and the Adobe Spectrum design system.",
   "body": {

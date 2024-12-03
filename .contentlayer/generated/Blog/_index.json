@@ -2,7 +2,13 @@
   {
     "title": "Adding click tracking to shadow DOM web components with Adobe Tags/Launch",
     "date": "2023-04-12T00:00:00.000Z",
-    "tags": ["adobe launch", "click tracking", "javascript", "web components", "adobe tags"],
+    "tags": [
+      "adobe launch",
+      "click tracking",
+      "javascript",
+      "web components",
+      "adobe tags"
+    ],
     "draft": false,
     "summary": "How to add click tracking to modern web components",
     "body": {
@@ -61,7 +67,11 @@
   {
     "title": "Adobe Analytics alerts and Microsoft Teams",
     "date": "2023-02-03T00:00:00.000Z",
-    "tags": ["adobe analytics", "microsoft teams", "alerts"],
+    "tags": [
+      "adobe analytics",
+      "microsoft teams",
+      "alerts"
+    ],
     "draft": false,
     "summary": "A quick way to send Adobe Analytics Alerts to Microsoft Teams Rooms",
     "body": {
@@ -100,7 +110,13 @@
   {
     "title": "Troubles setting up Adobe Target Prehiding in a NextJS app",
     "date": "2023-06-13T00:00:00.000Z",
-    "tags": ["adobe target", "react", "nextjs", "prehiding", "ab testing"],
+    "tags": [
+      "adobe target",
+      "react",
+      "nextjs",
+      "prehiding",
+      "ab testing"
+    ],
     "draft": false,
     "summary": "Watch as I attempt to set up content prehiding for Adobe Target activities on this very blog!",
     "body": {
@@ -169,7 +185,13 @@
   {
     "title": "Building a Launch Extension with Modern Tools: React, Typescript, and Adobe Spectrum",
     "date": "2024-11-24T00:00:00.000Z",
-    "tags": ["adobe launch", "typescript", "javascript", "react", "launch extension"],
+    "tags": [
+      "adobe launch",
+      "typescript",
+      "javascript",
+      "react",
+      "launch extension"
+    ],
     "draft": false,
     "summary": "Part 1 in a series where I build a Launch extension. This part covers up setting up the development environment and how to incorporate React, Typescript, and the Adobe Spectrum design system.",
     "body": {
@@ -268,7 +290,12 @@
   {
     "title": "Building an Adobe Analytics Metrics & Dimensions definitions page with the Adobe Analytics API",
     "date": "2022-12-07T00:00:00.000Z",
-    "tags": ["adobe analytics", "markdown", "api", "automation"],
+    "tags": [
+      "adobe analytics",
+      "markdown",
+      "api",
+      "automation"
+    ],
     "draft": false,
     "summary": "How to make metric and dimension definitions more easily available",
     "body": {
@@ -337,7 +364,11 @@
   {
     "title": "Fallbacks and Truthy Chains - How I make bullet proof data elements in Launch",
     "date": "2024-11-17T00:00:00.000Z",
-    "tags": ["adobe launch", "data collection", "debugging"],
+    "tags": [
+      "adobe launch",
+      "data collection",
+      "debugging"
+    ],
     "draft": false,
     "summary": "How to utilize fallback data elements to make sure you always get the data you need",
     "body": {
@@ -406,7 +437,11 @@
   {
     "title": "Automatically adding query parameters to Amplitude Events with Adobe Launch & Amplitude plugins",
     "date": "2023-03-22T00:00:00.000Z",
-    "tags": ["adobe launch", "amplitude", "query parameters"],
+    "tags": [
+      "adobe launch",
+      "amplitude",
+      "query parameters"
+    ],
     "draft": false,
     "summary": "How to use Amplitude plugin functions to automatically collect data",
     "body": {
@@ -450,7 +485,12 @@
   {
     "title": "Custom Debug Logger extension update - now with toast modals!",
     "date": "2024-11-18T00:00:00.000Z",
-    "tags": ["adobe launch", "data collection", "debugging", "launch extension"],
+    "tags": [
+      "adobe launch",
+      "data collection",
+      "debugging",
+      "launch extension"
+    ],
     "draft": false,
     "summary": "How to use the newest version of the custom debug logger",
     "body": {
@@ -489,7 +529,12 @@
   {
     "title": "Programmatically interacting with an Adobe Target Activity based on the movement of Mercury",
     "date": "2022-12-01T00:00:00.000Z",
-    "tags": ["adobe target", "automation", "api", "testing"],
+    "tags": [
+      "adobe target",
+      "automation",
+      "api",
+      "testing"
+    ],
     "draft": false,
     "summary": "How to enable/disable a Target test based on an API",
     "body": {
@@ -528,7 +573,13 @@
   {
     "title": "Syncing Adobe Launch/Tags with Github - Part 1: Setup",
     "date": "2023-04-18T00:00:00.000Z",
-    "tags": ["adobe launch", "adobe tags", "javascript", "github", "automation"],
+    "tags": [
+      "adobe launch",
+      "adobe tags",
+      "javascript",
+      "github",
+      "automation"
+    ],
     "draft": false,
     "summary": "How to use Github to build, sync, & deploy custom code directly to Adobe Launch/Tags - Part 1",
     "body": {
@@ -587,7 +638,13 @@
   {
     "title": "Syncing Adobe Launch/Tags with Github - Part 2: The Github Push Webhook",
     "date": "2023-04-26T00:00:00.000Z",
-    "tags": ["adobe launch", "adobe tags", "javascript", "github", "automation"],
+    "tags": [
+      "adobe launch",
+      "adobe tags",
+      "javascript",
+      "github",
+      "automation"
+    ],
     "draft": false,
     "summary": "How to use Github to build, sync, & deploy custom code directly to Adobe Launch/Tags - Part 2",
     "body": {
@@ -641,7 +698,13 @@
   {
     "title": "Syncing Adobe Launch/Tags with Github - Part 3: Extracting file contents with the Github API",
     "date": "2023-04-30T00:00:00.000Z",
-    "tags": ["adobe launch", "adobe tags", "javascript", "github", "automation"],
+    "tags": [
+      "adobe launch",
+      "adobe tags",
+      "javascript",
+      "github",
+      "automation"
+    ],
     "draft": false,
     "summary": "How to use Github to build, sync, & deploy custom code directly to Adobe Launch/Tags - Part 3",
     "body": {
@@ -695,7 +758,13 @@
   {
     "title": "Syncing Adobe Launch/Tags with Github - Part 4: Building Launch libraries programmatically",
     "date": "2023-05-08T00:00:00.000Z",
-    "tags": ["adobe launch", "adobe tags", "javascript", "github", "automation"],
+    "tags": [
+      "adobe launch",
+      "adobe tags",
+      "javascript",
+      "github",
+      "automation"
+    ],
     "draft": false,
     "summary": "How to use Github to build, sync, & deploy custom code directly to Adobe Launch/Tags - Part 4",
     "body": {
@@ -759,7 +828,12 @@
   {
     "title": "Syncing CMS images with Adobe Target Offers",
     "date": "2023-05-23T00:00:00.000Z",
-    "tags": ["adobe target", "contentful", "webhooks", "cms"],
+    "tags": [
+      "adobe target",
+      "contentful",
+      "webhooks",
+      "cms"
+    ],
     "draft": false,
     "summary": "Using Webhooks to automatically create Adobe Target offers out of CMS content",
     "body": {
@@ -823,7 +897,11 @@
   {
     "title": "Using data from Adobe Analytics in Adobe Target Offers",
     "date": "2022-12-16T00:00:00.000Z",
-    "tags": ["adobe analytics", "adobe target", "testing"],
+    "tags": [
+      "adobe analytics",
+      "adobe target",
+      "testing"
+    ],
     "draft": false,
     "summary": "How to use data pulled from Adobe Analytics in an Adobe Target offer.",
     "body": {

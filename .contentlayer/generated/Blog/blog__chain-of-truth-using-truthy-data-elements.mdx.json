@@ -1,7 +1,11 @@
 {
   "title": "Fallbacks and Truthy Chains - How I make bullet proof data elements in Launch",
   "date": "2024-11-17T00:00:00.000Z",
-  "tags": ["adobe launch", "data collection", "debugging"],
+  "tags": [
+    "adobe launch",
+    "data collection",
+    "debugging"
+  ],
   "draft": false,
   "summary": "How to utilize fallback data elements to make sure you always get the data you need",
   "body": {

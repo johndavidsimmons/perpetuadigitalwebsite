@@ -1,7 +1,12 @@
 {
   "title": "Custom Debug Logger extension update - now with toast modals!",
   "date": "2024-11-18T00:00:00.000Z",
-  "tags": ["adobe launch", "data collection", "debugging", "launch extension"],
+  "tags": [
+    "adobe launch",
+    "data collection",
+    "debugging",
+    "launch extension"
+  ],
   "draft": false,
   "summary": "How to use the newest version of the custom debug logger",
   "body": {
