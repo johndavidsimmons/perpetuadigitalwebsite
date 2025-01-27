@@ -1,9 +1,12 @@
-import { title } from '@/data/siteMetadata'
 import React from 'react'
+
+export const metadata = {
+  title: `John Simmons - Resume`,
+}
 
 const Experience = [
   {
-    title: 'Senior Software Engineer',
+    title: 'Senior Analytics Engineer',
     company: 'Marriott Hotels',
     startDate: '9/24',
     endDate: 'Present',
@@ -63,6 +66,12 @@ const Certifications = [
 
 const Projects = [
   {
+    title: 'Perpetua Digital Launch Assistant',
+    description:
+      'I am the sole developer of the Perpetua Digital Launch Assistant. The Perpetua Digital Launch Assistant is a tool for Launch professionals that offers better Searching, Visualization of Data Elements and Rule relationships, and creating email and slack alerts for Launch properties.',
+    url: 'https://assistant.perpetua.digital/',
+  },
+  {
     title: 'Custom Debug Logger - Launch Extension',
     description:
       'The Custom Debug Logger extension allows you write custom console logs and toast modal notifications using the Launch UI that are only visible in debug mode.',
@@ -71,6 +80,7 @@ const Projects = [
   {
     title: 'Omnibug',
     description: 'I am a contributor to the open source analytics browser extension Omnibug',
+    url: 'https://omnibug.io/',
   },
 ]
 
@@ -125,7 +135,7 @@ const Bumper = () => {
 }
 const Resume = () => {
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-6 lg:p-8">
+    <div className="mx-auto p-4 md:p-6 lg:p-8">
       <h1 className="text-3xl font-bold mb-4">John Simmons</h1>
       <ul className="list-none mb-4">
         <li className="mb-1">
@@ -136,18 +146,15 @@ const Resume = () => {
         </li>
         <li className="mb-1">
           <span className="font-bold">Blog:</span>{' '}
-          <a
-            href="https://perpetua.digital"
-            className="hover:underline cursor-pointer text-blue-400"
-          >
-            perpetua.digital
+          <a href="https://perpetua.digital" className="underline cursor-pointer text-blue-400">
+            https://perpetua.digital/
           </a>
         </li>
         <li className="mb-1">
           <span className="font-bold">LinkedIn:</span>{' '}
           <a
             href="https://www.linkedin.com/in/johnsimmons/"
-            className="hover:underline cursor-pointer text-blue-400"
+            className="underline cursor-pointer text-blue-400"
           >
             linkedin.com/in/johnsimmons
           </a>
@@ -190,6 +197,16 @@ const Resume = () => {
           <li key={index} className="pb-4">
             <h3 className="text-xl font-bold">{project.title}</h3>
             <p className="text-lg mb-1">{project.description}</p>
+            <p className="text-lg mb-1">
+              <a
+                className="underline cursor-pointer text-blue-400"
+                href={project.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {project.url}
+              </a>
+            </p>
           </li>
         ))}
       </ul>
