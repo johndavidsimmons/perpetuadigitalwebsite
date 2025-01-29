@@ -156,7 +156,7 @@ const Resume = () => {
       <h1 className="text-3xl font-bold mb-4 print:text-xl print:mb-2">John Simmons</h1>
       <ul className="list-none mb-4 print:mb-2 print:text-sm">
         <li className="mb-1 print:mb-0">
-          <span className="font-bold">Email:</span> john@perpetua.digital
+          <span className="font-bold">Email:</span> johnsimmons@protonmail.com
         </li>
         <li className="mb-1 print:mb-0">
           <span className="font-bold">Phone:</span> 219-576-2624
