@@ -170,10 +170,10 @@ const Resume = () => {
         <li className="mb-1 print:mb-0">
           <span className="font-bold">LinkedIn:</span>{' '}
           <a
-            href="https://www.linkedin.com/in/johnsimmons/"
+            href="https://www.linkedin.com/in/johndavidsimmons/"
             className="underline cursor-pointer text-blue-400"
           >
-            linkedin.com/in/johnsimmons
+            linkedin.com/in/johndavidsimmons
           </a>
         </li>
       </ul>
