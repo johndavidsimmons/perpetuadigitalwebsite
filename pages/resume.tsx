@@ -149,10 +149,17 @@ const Resume = () => {
     <div ref={componentRef} className="mx-auto p-4 md:p-6 lg:p-8 print:p-2 print:mx-8 print:my-6">
       <button
         onClick={(e) => handlePrint()}
-        className="rounded bg-primary-500 px-4 py-2 font-medium text-white hover:bg-primary-600 dark:hover:bg-primary-400 mb-4 print:hidden"
+        className="mr-2 rounded bg-primary-500 px-4 py-2 font-medium text-white hover:bg-primary-600 dark:hover:bg-primary-400 mb-4 print:hidden"
+      >
+        Print
+      </button>
+      <a
+        href="/static/JohnSimmonsResume.pdf"
+        download
+        className="inline-block rounded bg-blue-500 px-4 py-2 font-medium text-white hover:bg-blue-600 dark:hover:bg-blue-400 mb-4 print:hidden"
       >
         Download PDF
-      </button>
+      </a>
       <h1 className="text-3xl font-bold mb-4 print:text-xl print:mb-2">John Simmons</h1>
       <ul className="list-none mb-4 print:mb-2 print:text-sm">
         <li className="mb-1 print:mb-0">
