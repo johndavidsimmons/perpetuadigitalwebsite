@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useRef } from 'react'
+import { useReactToPrint } from 'react-to-print'
 
 export const metadata = {
   title: `John Simmons - Resume`,
@@ -123,8 +124,10 @@ const Skills = [
   'AWS Lambda',
   'Serverless Framework',
 ]
-const SectionHeading = ({ title }: { title: string }) => {
-  return <h2 className="text-blue-400 text-2xl font-bold mb-2">{title}</h2>
+const SectionHeading = ({ title, className = '' }: { title: string; className?: string }) => {
+  return (
+    <h2 className={`text-blue-400 text-2xl font-bold mb-2 print:text-lg ${className}`}>{title}</h2>
+  )
 }
 const Bumper = () => {
   return (
@@ -134,23 +137,37 @@ const Bumper = () => {
   )
 }
 const Resume = () => {
+  const componentRef = useRef<HTMLDivElement>(null)
+
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: 'John Simmons - Resume',
+    preserveAfterPrint: false,
+  })
+
   return (
-    <div className="mx-auto p-4 md:p-6 lg:p-8">
-      <h1 className="text-3xl font-bold mb-4">John Simmons</h1>
-      <ul className="list-none mb-4">
-        <li className="mb-1">
+    <div ref={componentRef} className="mx-auto p-4 md:p-6 lg:p-8 print:p-2 print:mx-8 print:my-6">
+      <button
+        onClick={(e) => handlePrint()}
+        className="rounded bg-primary-500 px-4 py-2 font-medium text-white hover:bg-primary-600 dark:hover:bg-primary-400 mb-4 print:hidden"
+      >
+        Download PDF
+      </button>
+      <h1 className="text-3xl font-bold mb-4 print:text-xl print:mb-2">John Simmons</h1>
+      <ul className="list-none mb-4 print:mb-2 print:text-sm">
+        <li className="mb-1 print:mb-0">
           <span className="font-bold">Email:</span> john@perpetua.digital
         </li>
-        <li className="mb-1">
+        <li className="mb-1 print:mb-0">
           <span className="font-bold">Phone:</span> 219-576-2624
         </li>
-        <li className="mb-1">
+        <li className="mb-1 print:mb-0">
           <span className="font-bold">Blog:</span>{' '}
           <a href="https://perpetua.digital" className="underline cursor-pointer text-blue-400">
             https://perpetua.digital/
           </a>
         </li>
-        <li className="mb-1">
+        <li className="mb-1 print:mb-0">
           <span className="font-bold">LinkedIn:</span>{' '}
           <a
             href="https://www.linkedin.com/in/johnsimmons/"
@@ -161,16 +178,16 @@ const Resume = () => {
         </li>
       </ul>
       <SectionHeading title="Summary" />
-      <p className="text-lg mb-4">
+      <p className="text-lg mb-4 print:text-base print:mb-2">
         A software developer who specializes in the Adobe Experience Cloud.
       </p>
       <Bumper />
       <SectionHeading title="Certifications" />
-      <ul className="list-none mb-4">
+      <ul className="list-none mb-4 print:mb-2">
         {Certifications.map((cert, index) => (
-          <li key={index} className="pb-4">
-            <h3 className="text-xl font-bold">{cert.title}</h3>
-            <p className="text-lg mb-1 hover:underline cursor-pointer">
+          <li key={index} className="pb-4 print:pb-2">
+            <h3 className="text-xl font-bold print:text-base">{cert.title}</h3>
+            <p className="text-lg mb-1 hover:underline cursor-pointer print:text-sm">
               <a href={cert.verificationUrl} target="_blank" rel="noopener noreferrer">
                 Verification Code: {cert.verificationCode}
               </a>
@@ -180,10 +197,10 @@ const Resume = () => {
       </ul>
       <Bumper />
       <SectionHeading title="Skills and Tools" />
-      <ul className="list-none mb-4 flex flex-wrap">
+      <ul className="list-none mb-4 flex flex-wrap print:mb-2">
         {Skills.map((skill, index) => (
-          <li key={index} className="mr-2 mb-2">
-            <p className="text-lg">
+          <li key={index} className="mr-2 mb-2 print:mr-1 print:mb-1">
+            <p className="text-lg print:text-sm">
               {skill}
               {index !== Skills.length - 1 ? ' • ' : ''}
             </p>
@@ -192,12 +209,12 @@ const Resume = () => {
       </ul>
       <Bumper />
       <SectionHeading title="Projects" />
-      <ul className="list-none mb-4">
+      <ul className="list-none mb-4 print:mb-2">
         {Projects.map((project, index) => (
-          <li key={index} className="pb-4">
-            <h3 className="text-xl font-bold">{project.title}</h3>
-            <p className="text-lg mb-1">{project.description}</p>
-            <p className="text-lg mb-1">
+          <li key={index} className="pb-4 print:pb-2">
+            <h3 className="text-xl font-bold print:text-base">{project.title}</h3>
+            <p className="text-lg mb-1 print:text-sm">{project.description}</p>
+            <p className="text-lg mb-1 print:text-sm">
               <a
                 className="underline cursor-pointer text-blue-400"
                 href={project.url}
@@ -211,31 +228,31 @@ const Resume = () => {
         ))}
       </ul>
       <Bumper />
-      <SectionHeading title="Experience" />
-      <ul className="list-none mb-4">
+      <SectionHeading title="Experience" className="print:break-before-page print:mt-8" />
+      <ul className="list-none mb-4 print:mb-2">
         {Experience.map((exp, index) => (
-          <li key={index} className="pb-4">
-            <h3 className="text-xl font-bold">{exp.title}</h3>
-            <p className="text-lg mb-1">
+          <li key={index} className="pb-4 print:pb-2">
+            <h3 className="text-xl font-bold print:text-base">{exp.title}</h3>
+            <p className="text-lg mb-1 print:text-sm">
               {exp.company}
-              <span className="text-sm">
+              <span className="text-sm print:text-xs">
                 {' '}
                 | {exp.startDate} - {exp.endDate}{' '}
               </span>
             </p>
-            <p className="text-sm mb-1"></p>
-            <p className="text-lg mb-1">{exp.description}</p>
+            <p className="text-sm mb-1 print:text-xs"></p>
+            <p className="text-lg mb-1 print:text-sm">{exp.description}</p>
           </li>
         ))}
       </ul>
       <Bumper />
       <SectionHeading title="Education" />
-      <ul className="list-none mb-4">
+      <ul className="list-none mb-4 print:mb-2">
         {Education.map((edu, index) => (
-          <li key={index} className="pb-4">
-            <h3 className="text-xl font-bold">{edu.title}</h3>
-            <p className="text-lg mb-1">{edu.institution}</p>
-            <p className="text-sm mb-1">{edu.date}</p>
+          <li key={index} className="pb-4 print:pb-2">
+            <h3 className="text-xl font-bold print:text-base">{edu.title}</h3>
+            <p className="text-lg mb-1 print:text-sm">{edu.institution}</p>
+            <p className="text-sm mb-1 print:text-xs">{edu.date}</p>
           </li>
         ))}
       </ul>
