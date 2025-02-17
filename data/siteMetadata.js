@@ -2,8 +2,7 @@ const siteMetadata = {
   title: 'perpetua.digital',
   author: 'John Simmons',
   headerTitle: 'perpetua.digital',
-  description:
-    'Advanced implementation and debugging techniques for Adobe Experience Cloud tools: AEP Web SDK, Adobe Analytics, Adobe Target, and Adobe Launch,  ',
+  description: 'Advanced implementation and debugging techniques for the Adobe Experience Cloud.',
   language: 'en-us',
   theme: 'system', // system, dark or light
   siteUrl: 'https://www.perpetua.digital/',

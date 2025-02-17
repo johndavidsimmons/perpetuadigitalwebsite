@@ -1,0 +1,276 @@
+---
+title: 'Less is more - Implementing the Adobe Web SDK with a single rule (and a lot of data elements)'
+date: '2025-02-18'
+tags: ['adobe launch', 'data collection', 'adobe web sdk', 'adobe experience platform']
+draft: false
+summary: 'Less is more - How I implement the Adobe Web SDK with a single ACDL rule and a whole lot of data elements.'
+---
+
+## The One Rule 💍
+
+![one rule](https://images.ctfassets.net/on47yk52ubpi/2Jh6eCl3LOUdap2bUluptb/2e5fbcd28dc84db6cff6b4aac7bcd7a7/Screenshot_2025-02-14_at_4.06.07_PM.png)
+
+<figure>
+  <figcaption>
+    Obviously if you're doing tag management there will be more rules, but all my communication to
+    Adobe goes through this single rule. I also have a non published rule that explains how this
+    property works for any collaborators since its a little unconventional. Added bonus: this
+    property builds in about 5 seconds.
+  </figcaption>
+</figure>
+
+## Too many rules in the kitchen, er property
+
+As time goes on, typically, the number of rules in a Launch property
+increases along with their complexity. This goes especially for properties that span multiple domains or web apps.
+In traditional setups with a static data layer, app measurement,
+at.js, etc. most rules do the same things: Analytics rules set data, send beacon, & clear variables.
+Target rules set profile params and return activities. Etc.
+
+Given that the Web SDK can combine
+everything you need to do into a single call, I think it makes sense to have a single
+rule that makes this call. The key is to change the data that it sends each time. When all events are
+based on the ACDL, you can use that triggering event to do everything dynamically.
+
+I recently did an Adobe Web SDK implementation from scratch and was able
+to put the one rule paradigm into practice and so far it's been a success.
+To put it plainly, my new property communicates to Adobe via a single Web SDK sendEvent rule that accepts
+any _allowed_ event type and sends 100% prebuilt XDM data with it. No altering/updating/etc
+of data is done in the rule action. It's easier to show than to describe so keep reading :)
+
+<hr />
+
+## The Rule
+
+![rule overview](https://images.ctfassets.net/on47yk52ubpi/JgRkUH9CrVMF4L0pT5qU3/6dbd81f33f00cb6161083b139483ceec/Screenshot_2025-02-14_at_4.20.35_PM.png?w=600)
+
+### Event
+
+The rule accepts any ACDL event type. In the conditions, I block anything unexpected
+
+![acdl event action](https://images.ctfassets.net/on47yk52ubpi/70XIgBIaxV4p1IaNBE9sB2/83c9f9ecf3e55d2bd739e063f789d054/Screenshot_2025-02-14_at_10.26.42_AM.png)
+
+### Conditions
+
+I have a data element called `ALLOWED_EVENTS` that is an array of known ACDL events. I make them all caps because
+it signifies to me that its an ACDL event. It's something I started doing
+a few years ago when writing documentation for developers and it just stuck.
+
+![condition data element](https://images.ctfassets.net/on47yk52ubpi/4pO57Wf4kLrs4iKrvB7ocm/b725852f4338c4f0b41e8a24b55da897/Screenshot_2025-02-14_at_10.46.09_AM.png?w=500)
+
+<figure>
+  <figcaption>
+    ALLOWED_EVENTS data elements is an array. The rule will only trigger if the adobeDataLayer event
+    is in this array.
+  </figcaption>
+</figure>
+
+The condition checks the event that just came in against this list.
+If it's not in the list, it returns false. I feel like the ACDL extension
+is missing something like this. I think it would be cool to put all the known events
+in the extension configuration and then in the action have a trigger for "known events" only.
+
+I'm using a data element for my known events array so there is a singular
+source of truth for known events. In the absence of true sharable conditions,
+this sort of accomplishes the same thing.
+
+Within the rule context and custom code, `event.message.event` is the ACDL event type. So in the case of
+
+```javascript
+adobeDataLayer.push({ event: 'PAGEVIEW' })
+```
+
+`event.message.event` will be equal to `PAGEVIEW` in the rule context. This is important.
+
+![acdl condition](https://images.ctfassets.net/on47yk52ubpi/bSimtzpMjmEW7VBPpjRI9/f0265c2c159798b13fdb23cc36b035ce/Screenshot_2025-02-14_at_10.35.48_AM.png)
+
+<figure>
+  <figcaption>Regular custom code condition</figcaption>
+</figure>
+![acdl condition 2](https://images.ctfassets.net/on47yk52ubpi/72yN8LCzSt06TUTq8g2EKQ/be3e2c71b0da0166a6d7dfecfc9c82e1/Screenshot_2025-02-14_at_10.35.55_AM.png)
+<figure>
+  <figcaption>Returns true if the triggering event is in the array of allowed events</figcaption>
+</figure>
+
+```javascript
+const acdlEvent = event.message.event
+const allowedEvents = _satellite.getVar('ALLOWED_EVENTS')
+return allowedEvents.includes(acdlEvent)
+```
+
+### Action
+
+The rule contains a single custom code action that is the crux of making this all work. When an allowed event triggers
+the rule, that event's XDM data element is retrieved (and merged with global data variables, keep reading) and sent to the Adobe Web SDK.
+
+I can't do it as dynamically like this in the extension (the string interpolation is not possible), hence the custom code.
+Also, since not all of the ACDL events need to send extra data, if there is no DATA data element (why did they just call this data?!) just send an empty object. Hence the `|| {}` in the code.
+
+```javascript
+const acdlEvent = event.message.event
+alloy('sendEvent', {
+  xdm: _satellite.getVar(`${acdlEvent}_XDM`),
+  data: _satellite.getVar(`${acdlEvent}_DATA`) || {},
+  // other fields here (ie renderDecisions), but I'm leaving them out for simplicity
+})
+
+// When the application does this: adobeDataLayer.push({ event: 'PAGEVIEW' })
+
+// the rule action becomes this:
+// alloy("sendEvent", {
+//    xdm: _satellite.getVar('PAGEVIEW_XDM'),
+//    data: _satellite.getVar('PAGEVIEW_DATA'),
+//    renderDecisions: // when to render decisions logic, etc
+// })
+```
+
+![data elements](https://images.ctfassets.net/on47yk52ubpi/30N7QaxP9d6YXJut9E729s/ed92a4b02a577cda5c159b2e571d6417/Screenshot_2025-02-14_at_4.27.09_PM.png?w=400)
+
+<figure>
+  <figcaption>
+    XDM Data Elements named after their event and dynamically sent when needed.
+  </figcaption>
+</figure>
+
+<hr />
+
+## Making XDM Data Elements
+
+Once this rule is setup, the real work is in making data elements.
+Each event has its own XDM and DATA data elements,
+named after the event. So for a `PAGEVIEW` event,
+the XDM and DATA data elements used are `PAGEVIEW_XDM` and `PAGEVIEW_DATA`.
+
+Just as you can imagine, the `PAGEVIEW_XDM` data element has all the data I need to track a pageview, the
+`PURCHASE_XDM` data element has all the data I need to track a purchase, etc. The same applies to the `EVENTNAME_DATA` data elements
+that send ancillary data to Target and event forwarding properties.
+It all relies on the naming conventions being strictly followed. All caps event name & "\_XDM" and "\_DATA".
+
+![xdm data element](https://images.ctfassets.net/on47yk52ubpi/6z68lfwPInj67hGrgTutpm/e4b9bc77a5d77585966c2b84e957220a/Screenshot_2025-02-14_at_2.06.11_PM.png)
+
+<figure>
+  <figcaption>
+    The PAGEVIEW XDM data element, because the name matches the event name, this data element is
+    send with PAGEVIEW events
+  </figcaption>
+</figure>
+
+This setup requires that you have only a _single, fully formed_ XDM data element per event. Any dynamic values or updating
+must be done elsewhere. Ideally, in other data elements using mapping and sequences (keep reading).
+The goal is to create a complete package for each event to send
+to the AEP SDK. To keep the one rule as simple as possible, no custom code updating or using the `Update Variable` action.
+
+The following is how I keep any and all dynamic logic within data elements:
+
+### Sequence & Mapping Table Data Elements
+
+[I wrote a whole blog post on this concept on sequencing data elements which I called truthy chains](https://www.perpetua.digital/blog/chain-of-truth-using-truthy-data-elements) before I found out there is an extension for it!
+Check out the Sequence Data Element type in the Evolytics Data Element Assistant extension.
+It allows you to create a sequence of data elements that are evaluated in order. This is especially useful when
+there are multiple ways that data can be derived; ie is my campaign dimension a query parameter, a cookie, sent in my ACDL event payload, etc.
+
+The sequence data element allows you to create a priority list of data elements. It will return the first truthy value
+from the list. Then in the XDM data element, I can say give me the value of the sequence. I don't care where you get it from,
+just give me the first truthy value.
+
+![sequence data element](https://images.ctfassets.net/on47yk52ubpi/78oQiFrmJgERufjBhefMZ7/f97db01d05c4cb59f54d90f2b7a2e990/Screenshot_2025-02-14_at_2.57.41_PM.png)
+
+<figure>
+  <figcaption>I know one of these will be present, give me the first one you find</figcaption>
+</figure>
+
+Mapping table data elements are similar but are more of a key/value pair. They are good for dynamic values that change
+from page to page or even event to event.
+
+### Evars and Props as constants
+
+This one is controversial (fight me 👊), but in this setup I map my evars and props to constant data elements. It ensures uniformity
+and makes it so I don't have to leave Launch to go look things up (hey what should prop4 be again???).
+
+![constant data element](https://images.ctfassets.net/on47yk52ubpi/1Nucsiiou5iwOMQo7jBp6A/cf607ac466ddc222f4880e7d480aac7c/Screenshot_2025-02-14_at_3.09.08_PM.png)
+
+<figure>
+  <figcaption>Anywhere I need to use this eVar I can refer to it by name</figcaption>
+</figure>
+
+So the `_experience.analytics` sections
+of my XDM data elements looks like this:
+
+![constant xdm](https://images.ctfassets.net/on47yk52ubpi/40AoZ8oktT2NlWVI2MMbhn/5bd9471caeb520a99a971526eb8ccf3c/Screenshot_2025-02-14_at_3.10.18_PM.png)
+
+<figure>
+  <figcaption>
+    Once all the dimensions are set as constants this section can be filled out very quickly
+  </figcaption>
+</figure>
+
+As an added bonus, when all your props and evars are named constants, you can dump them all to the console or
+save them as their own object in a data element:
+
+```javascript
+// make me an array of all my evars and their values at any given time.
+return Array.from({ length: 250 }, (_, index) => index + 1)
+  .filter((num) => _satellite.getVar(`eVar${num}`))
+  .map((num) => {
+    return {
+      [`eVar${num}`]: _satellite.getVar(`eVar${num}`),
+    }
+  })
+
+// [
+//     {
+//         "eVar1": "hello"
+//     },
+//     {
+//         "eVar41": "world"
+//     },
+//     {
+//         "eVar192": "foo"
+//     },
+//     {
+//         "eVar237": "bar"
+//     }
+// ]
+```
+
+### Global Merge
+
+Everyone who uses Adobe Analytics usually has at least one dimension that they want to send on every analytics beacon: url, Query params, etc. I've made a
+"global" XDM data element that contains all the props and evars that I want to send on every `sendEvent` call. The
+individual XDM data elements only contain the unique data that is specific to their event.
+These unique data elements are then merged with this global data element in the AEP onbeforeeventsend section:
+
+```javascript
+// inside aep onbeforeeventsend callback
+// deep merge ensures all levels of the XDM object are merged
+function deepMerge(target, source) {
+  for (const key in source) {
+    if (source[key] instanceof Object && key in target) {
+      target[key] = deepMerge(target[key], source[key])
+    } else {
+      target[key] = source[key]
+    }
+  }
+  return target
+}
+
+const globalMerge = deepMerge(_satellite.getVar('GLOBAL_XDM'), content.xdm)
+content.xdm = globalMerge
+```
+
+So for example, the `PURCHASE_XDM` data element contains just product string data and `GLOBAL_XDM` contains all the global props and evars.
+Then when the rule is triggered, `sendEvent` fires and onbeforeeventsend runs, the _actual_ XDM that is sent
+will be a merge of the two data elements. This becomes a set once, send everywhere system for global variables.
+
+<hr />
+## In Action
+
+![rule fire gif](https://images.ctfassets.net/on47yk52ubpi/7qLgZK1Wis7sPWWybI9tAb/892f8e372b9bfde151385a5dc2ec017c/ruleblock.gif)
+
+Using this setup for example, instead of 10 different rules for 10 different events, you would have this single rule and up to 20 data elements (10 XDM and 10 DATA)
+can be used to handle all incoming events. If and when you need to add a new event,
+you add it to the ALLOWED_EVENTS array and
+create a new XDM and DATA data element for it. You do not need to touch the rule at all. I believe this is
+how Adobe intends (spiritually) for the Web SDK in Launch to work. Things obviously will get more complicated
+when you need to return personalization offers, but I believe getting creative with data elements you can maintain
+the single rule setup.
