@@ -19,10 +19,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <meta content="width=device-width, initial-scale=1" name="viewport" />
         <script src="/static/scripts/prehide.js" async></script>
-        <script
-          src="https://assets.adobedtm.com/9d5ea4d031a2/94b8b3ffca90/launch-20d79a252cfc.min.js"
-          async
-        ></script>
+        <script src="https://cdn.perpetua.digital/launch-20d79a252cfc.min.js" async></script>
       </Head>
       <GTMContainer />
       <LayoutWrapper>
