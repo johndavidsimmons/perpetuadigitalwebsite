@@ -12,19 +12,22 @@ const Experience = [
     startDate: '9/24',
     endDate: 'Present',
     description:
-      'I provide comprehensive guidance on the implementation and deployment of Adobe Experience Cloud solutions, including Adobe Launch, Adobe Analytics, Adobe Target, and the Adobe Experience Platform. My responsibilities include technical implementation and development and stakeholder enablement, including creating technical documentation, conducting technical training, and mentoring team members.',
+      'I provide comprehensive guidance on the implementation and deployment of Adobe Experience Cloud solutions, \
+      including Adobe Launch, Adobe Analytics, Adobe Target, and the Adobe Experience Platform. My responsibilities \
+      include technical implementation and development and stakeholder enablement, including creating technical documentation, \
+      conducting technical training, and mentoring team members.',
   },
   {
     title: 'Senior Software Engineer',
     company: 'Rocket Money',
     startDate: '8/23',
     endDate: '8/24',
-    description: `As a Senior Software Engineer, my primary focus is integrating our website and mobile
+    description: `As a Senior Software Engineer, my primary focus was integrating our website and mobile
 app with analytics vendors and services such as Adobe, Amplitude, Segment, Google, and
-Singular. This role requires expertise in our codebases and technology stack and a deep
+Singular. This role required expertise in our codebases and technology stack and a deep
 understanding of vendor libraries. In addition to instrumenting data collection with these
-tools, I collaborate closely with our Product and Marketing teams to develop website and
-app experimentation. Furthermore, I serve as an advisor on our data governance committee,
+tools, I collaborated closely with our Product and Marketing teams to develop website and
+app experimentation. Furthermore, I served as an advisor on our data governance committee,
 to help ensure data quality and standardization.`,
   },
   {
@@ -69,7 +72,7 @@ const Projects = [
   {
     title: 'Perpetua Digital Launch Assistant',
     description:
-      'I am the sole developer of the Perpetua Digital Launch Assistant. The Perpetua Digital Launch Assistant is a tool for Launch professionals that offers better Searching, Visualization of Data Elements and Rule relationships, and creating email and slack alerts for Launch properties.',
+      'I am the sole developer of the Perpetua Digital Launch Assistant. The Perpetua Digital Launch Assistant is a tool for Adobe Developers that offers better Searching, Visualization of Data Elements and Rule relationships, and creating email and slack alerts for Launch properties.',
     url: 'https://assistant.perpetua.digital/',
   },
   {
@@ -104,6 +107,13 @@ const Skills = [
   'Adobe Launch',
   'Adobe Experience Platform (AEP)',
   'AEP Web SDK',
+  'JavaScript',
+  'TypeScript',
+  'React',
+  'React Native',
+  'Next.js',
+  'Python',
+  'Node.js',
   'Google Tag Manager',
   'Amplitude',
   'Segment',
@@ -112,16 +122,9 @@ const Skills = [
   'CSS',
   'Sass',
   'Tailwind',
-  'JavaScript',
-  'TypeScript',
-  'React',
-  'React Native',
-  'Next.js',
-  'Python',
-  'Node.js',
   'GraphQL',
   'Git',
-  'AWS Lambda',
+  'AWS Lambdas',
   'Serverless Framework',
 ]
 const SectionHeading = ({ title, className = '' }: { title: string; className?: string }) => {

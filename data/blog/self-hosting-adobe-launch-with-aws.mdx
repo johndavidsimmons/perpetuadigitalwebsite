@@ -1,0 +1,118 @@
+---
+title: 'Self Hosting your Adobe Launch Library from scratch with AWS EC2, S3, and Cloudfront'
+date: '2025-03-06'
+tags: ['adobe launch', 'infrastructure', 'aws', 'first party']
+draft: false
+summary: 'How to self host your adobe launch library in a first party context using AWS.'
+---
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/2hykVO3bAdGKo1GUZYj9J2/e45c3ee64aa228fe85243083b8426017/selfhosted.png"
+  alt="Self Hosting"
+/>
+<figure>
+  <figcaption>My self hosted production Launch library on perpetua.digital</figcaption>
+</figure>
+
+# So you want to self host your Launch library?
+
+## What is it?
+
+Self hosting your Adobe Launch library means that instead of letting Adobe (aka Akamai) host your Launch Library
+code, you host it yourself (well duh). In reality this means that instead of using the url that Launch
+gives you in the installation instructions of an environment, you would use your own url.
+For example, if your url is `www.example.com` your Launch library would be `www.example.com/launch-library.js`
+instead of the usual `https://assets.adobedtm.com/...`. It also means that you need to handle the caching
+of the library on your own so that changes to the library are reflected on your website as soon as possible.
+
+## Why do it?
+
+[Adobe lists a litany of reasons for wanting to self host, which you can read here.](https://experienceleague.adobe.com/en/docs/experience-platform/tags/publish/self-hosting-libraries#why-use-self-hosting)
+The only real reason in my opinion is that it makes Launch not _automatically_ blocked by ad blockers.
+Since most ad blockers are looking to block requests to `assets.adobedtm.com`, if your library is self-hosted
+(i.e., coming from your own domain), it will (most likely) not be blocked. Now, this doesn't mean that your pixels will
+not be blocked by ad blockers, just that the Launch library will not be blocked. This can help you pick up
+traffic from users who use ad blockers that would otherwise be lost.
+
+While self hosting is ultimately unnecessary for my little blog, it was a fun challenge. As of this writing,
+Launch is self hosted on `www.perpetua.digital` under `cdn.perpetua.digital/production/launch`.
+That being said, it costs me money to have this up and my sponsorship checks have not cleared yet.
+Depending on when you read this I may have reverted back to Akamai hosting.
+
+<hr />
+
+# Steps to self host Launch via AWS
+
+## Prerequisites
+
+1. As with any AWS project, a credit card is required :)
+2. An AWS account
+3. A domain name or DNS access
+4. A website
+5. A basic understanding of AWS services
+6. AWS Cloudfront enabled (it was disabled by default for me)
+7. Know how to work with Public/Private keys and encryption
+
+## Basic Steps in pseudo order
+
+1. Create/Acquire an SFTP server
+2. Create an SFTP Host in Launch
+3. Attach SFTP Host to Production Environment
+4. Build & Publish Library to Production
+5. Transfer production Launch files from SFTP server to S3 Bucket, automation or manually
+6. Setup Cloudfront CDN to serve from S3 Bucket
+7. Update Launch Library URL on your website
+8. Setup cache invalidation for Cloudfront
+
+<hr />
+## Demo Videos: I hesitated to write out exactly what to do in a full post because this was more of an
+experiment than a prescription. It also would just be a wall of bash commands that would likely be incorrect
+by the time I publish this. So I decided to just let the videos speak for themselves.
+
+<span style={{ backgroundColor: 'yellow', fontWeight: 'bold' }}>
+  While doing this, I skipped a lot of very important AWS options for security and cost savings.
+  What I am saying is that this should be considered a proof of concept setup you can use as a
+  guide, but when doing it for real *please* pay more attention to the AWS options. Undertake at
+  your own risk!
+</span>
+
+### Part 1: SFTP Server, EC2, Hosts, and Keys
+
+The first video is mostly me setting up an SFTP server in an EC2 instance. I create a special user for Launch to connect with and set up
+the server so this user can connect via private keys instead of a password. Launch does not offer a password connection option for SFTP hosts.
+This is a lot of steps, but its _alot_ cheaper than Amazon Transfer Family App (Amazon's FTP service).
+
+After that, I setup the host and build a few Launch libraries to prove that its working by looking at the files on the server via an FTP client.
+
+Watch on 1.5x speed because I think a lot between sentences :)
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/Shs7lRFkIQ4?si=6beSzuM30akwXGtX"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+
+### Part 2: S3 Bucket transfers, Cloudfront CDN, DNS Settings, and Launch Library URL Update
+
+In the second part I show how I transfer files from my SFTP server to an S3 bucket, setup a Cloudfront CDN, and update my Launch Library URL.
+There are some ins and outs of managing SSL certificates in AWS, using custom domains for cloudfront, and caching. Enjoy!
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/NRbgpV4tBTI?si=3ZgvaNdiUELy4G-p"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+
+<hr />
+## One final note Finally, I would like to add that unless you know exactly *why* you want to self host,
+you probably don't need to.

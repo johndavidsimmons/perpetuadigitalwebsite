@@ -1,0 +1,137 @@
+---
+title: 'Documentation for Launch Properties and my rejected README extension'
+date: '2025-03-01'
+tags: ['adobe launch', 'data collection', 'documentation', 'launch extension']
+draft: false
+summary: 'My README extension for Launch was rejected by Adobe. Here is how I do documentation for properties.'
+---
+
+<figure>
+  <img
+    src="https://images.ctfassets.net/on47yk52ubpi/3DF2iYc1GMAjICOaZWvHOo/64d7e7cbf527ecafa25958bb65bc33d0/readmemarkdown.gif"
+    alt="README Extension"
+  />
+</figure>
+<figcaption>My README extension for Launch was rejected by Adobe 😔</figcaption>
+
+<hr />
+
+# Data Collection Documentation
+
+If you work in Launch every day like I do, you probably find it to be self documenting.
+I can open a property and pretty much tell what it does by looking at a few rules and
+maybe the configuration of the main extensions. However, not everyone is fortunate
+enough to spend their days in our favorite tag management tool and thus have such a keen
+sense of setup, dare I say intuition, for how to collect data from websites.
+
+Because of this, in some way or another, I usually have to document the setup of a Launch property
+so that someone else, such as a new hire, marketer, analyst, etc can get the gist of it and thus
+do some work in it. This documentation is usually done somewhere _outside_ of Launch like an internal
+wiki tool like Confluence or, unfortunately, once in a while, in a Word document.
+
+I think documentation, in general, should be done close to the source; ie inside
+the tool if possible. Unfortunately, Launch does not offer this option. Instead, we're
+left to pass around links to confluence pages, out of date word documents, and writing
+comments in our custom code about why this rule uses a CSS selector to trigger. If only
+there was a better way...
+
+# The Property that requires explanation
+
+My desire to document Launch in Launch started when I began using the [1 Rule setup as documented
+in my previous post](https://www.perpetua.digital/blog/implementing-adobe-web-sdk-data-single-launch-rule).
+This nonstandard setup would be confusing to a casual user of Launch and could easily be broken, or worse,
+bloated with unnecessary rules. Thus, I needed to document how to use it.
+
+Someone in [Measure Slack](https://www.measure.chat/) suggested a README type rule that they use. Basically an unpublished rule (that remains unpublished) with no triggering action and a custom
+code section that is all comments and explains how things work.
+You may have caught a glimpse of it in some of the pictures I posted in the 1 Rule setup post.
+
+<figure>
+  <img
+    src="https://images.ctfassets.net/on47yk52ubpi/2Jh6eCl3LOUdap2bUluptb/2e5fbcd28dc84db6cff6b4aac7bcd7a7/Screenshot_2025-02-14_at_4.06.07_PM.png"
+    alt="1 Rule Setup"
+  />
+</figure>
+<figcaption>1 Rule Setup, ok it technically has 2 rules</figcaption>
+
+<figure>
+  <img
+    src="https://images.ctfassets.net/on47yk52ubpi/5v9w0BDhHQYoKd6hM9Pn8r/7e057bd0b3f969286b531535f271d70b/Screenshot_2025-03-01_at_10.19.28_AM.png"
+    alt="1 Rule Setup"
+  />
+</figure>
+<figcaption>Please read me bro!</figcaption>
+
+<figure>
+  <img
+    src="https://images.ctfassets.net/on47yk52ubpi/2nUtPSkdoRV1EkxGzT8iBr/eff0b7caa2af9755916d666f32131a46/Screenshot_2025-03-01_at_10.19.18_AM.png"
+    alt="1 Rule Setup"
+  />
+</figure>
+<figcaption>I kindly ask that you follow these ultimately unenforceable rules</figcaption>
+
+Although this is better than nothing, it requires a few clicks to get to and is in the less than
+desirable format of plain JavaScript comments with no styling or structure. After using this
+for a while I thought I had come up with a better way.
+
+# The README extension
+
+Every good Github project has a [README file](https://en.wikipedia.org/wiki/README). This
+document explains everything. How the project works, why certain decisions were made,
+what the current state of the project is, etc. I thought each Launch property should have one
+and I thought I should be the one to do it.
+
+Given that the only way to add to the Launch UI is through an extension, I decided to make an
+extension I just called README. It was basically a regular launch extension with a configuration
+section that was a markdown editor. The point was for users to have a place to put documentation
+for their properties _inside_ of their properties. Close to the source, as it were.
+
+You install the extension, go to the configuration and write your documentation in markdown.
+Markdown allows some styling and hierarchy that everyone is used to when reading documentation.
+The extension made for a single, go-to place for documentation, instead of having it scattered
+in custom code comments, wiki pages, etc.
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/YR7uSiCUO8o?si=RIJNOQTQ-_su1yV9"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+
+## Why it was rejected
+
+Ultimately, it was not meant to be. After a little bit of back and forth with Adobe, they decided to reject
+the extension. The main issue is that extensions are a buildable of the build library and not the Launch UI.
+Thus, although the extension is not meant to be published, there is nothing that could prevent someone from doing so.
+Someone who doesn't know what they are doing could very easily put confidential information, PII, etc into their extension and publish it.
+Perhaps I could get around this by including a hidden JS error that would cause the build to fail
+if the extension was included, but that probably would not fly either :).
+
+Funnily enough, the extension was accepted in the listings exchange and the page is still up. Although I suspect
+they accept everything since this URL is a requirement to even have you extension reviewed.
+https://exchange.adobe.com/apps/ec/600111
+
+<figure>
+  <img
+    src="https://images.ctfassets.net/on47yk52ubpi/MxJt3nYlGPm5irBPYgyhr/5a842269ab024aed8d55649f6bd9e486/Screenshot_2025-03-01_at_2.04.28_PM.png"
+    alt="Adobe Exchange Listing"
+  />
+</figure>
+<figcaption>
+  Checking the "Show Tips" switch would tell you more about READMEs and Markdown and would show you
+  some common Markdown components
+</figcaption>
+
+## Silver Lining
+
+Although this idea as an extension did not work out, the Adobe rep I spoke to was very supportive of
+the idea and Launch's need for documentation in general. He promised to add it to their feature roadmap.
+I will keep my fingers crossed.
+
+Since I developed the extension I still have the ability to release it privately. If for some
+reason someone is interested I can release it to their organziation. Also, if you want to deploy
+it on your own, [the code is available here](https://github.com/johndavidsimmons/launchreadme).
