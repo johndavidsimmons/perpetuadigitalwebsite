@@ -7,79 +7,74 @@ export const metadata = {
 
 const Experience = [
   {
-    title: 'Senior Software Engineer',
+    title: 'Senior Analytics Engineer',
     company: 'Marriott Hotels',
     startDate: '9/24',
     endDate: 'Present',
     description:
-      'I provide comprehensive technical guidance on the implementation and deployment of Adobe Experience Cloud solutions, \
-      including Adobe Launch, Adobe Analytics, Adobe Target, and the Adobe Experience Platform. My responsibilities \
-      include technical implementation and development and stakeholder enablement, including creating technical documentation, \
-      conducting technical training, and mentoring team members.',
+      'Develop, implement, and maintain testing and analytics solutions such as Adobe Analytics, \
+            Adobe Target, Adobe Launch, and Adobe Experience Platform. Conduct thorough testing to ensure \
+            data accuracy and reliability of these tools. Also responsible for the deployment and maintenance of hundreds of marketing pixels across dozens of digital properties. \
+            Collaborate with cross-functional teams to resolve implementation \
+            issues and maintain testing documentation.',
   },
   {
     title: 'Senior Software Engineer',
     company: 'Rocket Money',
     startDate: '8/23',
     endDate: '8/24',
-    description: `As a Senior Software Engineer, my primary focus was integrating our website and mobile
-app with analytics vendors and services such as Adobe, Amplitude, Segment, Google, and
-Singular. This role required expertise in our codebases and technology stack and a deep
-understanding of vendor libraries. In addition to instrumenting data collection with these
-tools, I collaborated closely with our Product and Marketing teams to develop website and
-app experimentation. Furthermore, I served as an advisor on our data governance committee,
-to help ensure data quality and standardization.`,
+    description: `Engineer responsible for integrating our website and mobile app with analytics vendors such as Adobe, Amplitude, Segment, Singular, and Google. \
+     Served as an advisor on data governance, \
+        ensuring data quality and standardization.`,
   },
   {
     title: 'Senior Analytics Engineer',
     company: 'Rocket Mortgage',
     startDate: '8/16',
     endDate: '8/23',
-    description: `As a Senior Analytics Engineer, I specialized in experimentation and conversion rate optimization (CRO) using Adobe Target. My work involved managing and implementing A/B tests, XT tests, and recommendations tests on both mobile and desktop platforms. I was responsible for the engineering and QA of these tests, ensuring high-quality execution and performance. Additionally, I collaborated with business owners to manage and implement testing and personalization efforts from ideation to deployment, based on customer segmentation studies and interactions. I also owned the requirements for our A/B testing solution and acted as the Subject Matter Expert (SME) for personalization from a technical implementation standpoint.`,
+    description: `Served as a subject matter expert for Adobe Experience Cloud products. Worked on end-to-end project consulting for Adobe Launch, Adobe Analytics, and Adobe Target. Wrote technical documentation, conducted training, and built dashboards for analysts. Ensured compliance with industry standards and best practices for MarTech implementations.`,
   },
   {
     title: 'User Experience Researcher',
     company: 'Quicken Loans',
     startDate: '5/13',
     endDate: '9/16',
-    description: `I provided insights on the relationship between the behavior of our users, our website data,
-and the business key performance indicators of Quicken Loans' various web and mobile
-applications.`,
+    description: `Provided insights on user behavior and website data. Collaborated with teams to enhance user experience and business KPIs. Documented and represented sufficient test cases to satisfy requirements.`,
   },
 ]
 
 const Certifications = [
-  {
-    title: 'Adobe Certified Master - Adobe Target Architect',
-    product: 'Adobe Target',
-    verificationCode: 'JFJMMHF1KFB4QP96',
-    verificationUrl: 'https://www.certmetrics.com/adobe/public/verification.aspx',
-  },
   {
     title: 'Adobe Certified Expert - Adobe Analytics Developer',
     product: 'Adobe Analytics',
     verificationCode: 'RXQWVQH2CNBQ1YGL',
     verificationUrl: 'https://www.certmetrics.com/adobe/public/verification.aspx',
   },
+  {
+    title: 'Adobe Certified Master - Adobe Target Architect',
+    product: 'Adobe Target',
+    verificationCode: 'JFJMMHF1KFB4QP96',
+    verificationUrl: 'https://www.certmetrics.com/adobe/public/verification.aspx',
+  },
 ]
 
 const Projects = [
   {
+    title: 'Omnibug',
+    description: 'I am a contributor to the open source MarTech browser extension Omnibug',
+    url: 'https://omnibug.io/',
+  },
+  {
     title: 'Perpetua Digital Launch Assistant',
     description:
-      'I am the sole developer of the Perpetua Digital Launch Assistant. The Perpetua Digital Launch Assistant is a tool for Adobe Developers that offers better Searching, Visualization of Data Elements and Rule relationships, and creating email and slack alerts for Launch properties.',
+      'I am the sole developer of the Perpetua Digital Launch Assistant. The Perpetua Digital Launch Assistant is a tool for Adobe Launch Developers that offers better Searching, Visualization of Data Elements and Rule relationships, and exporting of Launch data.',
     url: 'https://assistant.perpetua.digital/',
   },
   {
     title: 'Custom Debug Logger - Launch Extension',
     description:
-      'The Custom Debug Logger extension allows you write custom console logs and toast modal notifications using the Launch UI that are only visible in debug mode.',
+      'The Custom Debug Logger extension allows you write custom console logs and toast modal notifications using the Launch UI that are only visible in debug mode. Useful for fast debugging of Launch properties.',
     url: 'https://www.adobeexchange.com/experiencecloud.details.104698.html',
-  },
-  {
-    title: 'Omnibug',
-    description: 'I am a contributor to the open source analytics browser extension Omnibug',
-    url: 'https://omnibug.io/',
   },
 ]
 
@@ -111,7 +106,6 @@ const Skills = [
   'Agile',
   'Marketing Pixels',
   'Server Side Tracking',
-  'Server Side Experimentation',
   'JavaScript',
   'TypeScript',
   'React',
@@ -131,8 +125,8 @@ const Skills = [
   'Git',
   'AWS Lambdas',
   'Serverless Framework',
-  'Customer Relationship Optimization',
 ]
+
 const SectionHeading = ({ title, className = '' }: { title: string; className?: string }) => {
   return (
     <h2 className={`text-blue-400 text-2xl font-bold mb-2 print:text-lg ${className}`}>{title}</h2>
@@ -140,8 +134,8 @@ const SectionHeading = ({ title, className = '' }: { title: string; className?: 
 }
 const Bumper = () => {
   return (
-    <div className="my-4 print:my-2">
-      <hr className="my-4 print:my-2"></hr>
+    <div className="my-4">
+      <hr className="my-4"></hr>
     </div>
   )
 }
@@ -162,13 +156,6 @@ const Resume = () => {
       >
         Print
       </button>
-      <a
-        href="/static/JohnSimmonsResume.pdf"
-        download
-        className="inline-block rounded bg-blue-500 px-4 py-2 font-medium text-white hover:bg-blue-600 dark:hover:bg-blue-400 mb-4 print:hidden"
-      >
-        Download PDF
-      </a>
       <h1 className="text-3xl font-bold mb-4 print:text-xl print:mb-2">John Simmons</h1>
       <ul className="list-none mb-4 print:mb-2 print:text-sm flex flex-wrap">
         <li className="mb-1 print:mb-0 mr-4">
@@ -195,15 +182,19 @@ const Resume = () => {
       </ul>
       <SectionHeading title="Summary" />
       <p className="text-lg mb-4 print:text-base print:mb-2">
-        A software developer who specializes in the Adobe Experience Cloud Analytics and
-        Experimentation.
+        A software developer who specializes in the Adobe Experience Cloud and MarTech solutions.
       </p>
       <Bumper />
       <SectionHeading title="Certifications" />
       <ul className="list-none mb-4 print:mb-2">
         {Certifications.map((cert, index) => (
           <li key={index} className="pb-4 print:pb-2">
-            <p className="text-lg print:text-base font-bold">{cert.title}</p>
+            <h3 className="text-xl font-bold print:text-base">{cert.title}</h3>
+            <p className="text-lg mb-1 hover:underline cursor-pointer print:text-sm">
+              <a href={cert.verificationUrl} target="_blank" rel="noopener noreferrer">
+                Verification Code: {cert.verificationCode}
+              </a>
+            </p>
           </li>
         ))}
       </ul>
@@ -219,7 +210,7 @@ const Resume = () => {
           </li>
         ))}
       </ul>
-      <Bumper />
+      {/* <Bumper /> */}
       <SectionHeading title="Experience" className="print:mt-8" />
       <ul className="list-none mb-4 print:mb-2">
         {Experience.map((exp, index) => (
@@ -263,9 +254,8 @@ const Resume = () => {
         {Education.map((edu, index) => (
           <li key={index} className="pb-4 print:pb-2">
             <h3 className="text-xl font-bold print:text-base">{edu.title}</h3>
-            <p className="text-lg mb-1 print:text-sm">
-              {edu.institution} - {edu.date}
-            </p>
+            <p className="text-lg mb-1 print:text-sm">{edu.institution}</p>
+            <p className="text-sm mb-1 print:text-xs">{edu.date}</p>
           </li>
         ))}
       </ul>
