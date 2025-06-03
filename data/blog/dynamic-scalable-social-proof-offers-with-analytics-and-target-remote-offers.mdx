@@ -1,0 +1,197 @@
+---
+title: 'Dynamic, Scalable Social Proof Offers with Real Analytics Data in Adobe Target'
+date: '2025-06-03'
+tags: ['adobe analytics', 'adobe target', 'testing']
+draft: false
+summary: 'How to use real data pulled from Adobe Analytics in an Adobe Target offer.'
+---
+
+# Improving on the Previous Example
+
+This article is an addendum to a previous piece I wrote about
+[using Adobe Analytics data in Target offers](https://www.perpetua.digital/blog/using-data-from-adobe-analytics-in-adobe-target-offers).
+In this follow-up, I will expand on that idea, focusing on using real analytics data in
+Target experiments in a more scalable and dynamic way.
+
+I want to retrieve data and build the offer when it's needed as a Target remote offer,
+rather than prebuilding it in Target and updating it daily.
+The previous method involved updating offers with new data every day, which works.
+However, if you're working with thousands of products,
+you don't want to update thousands of offers every day just to change a small amount of code.
+Instead, I want a single remote offer that builds a dynamic offer for me.
+
+## Reminder: What is a Social Proof Offer?
+
+Imagine visiting a product page, such as www.example.com/product/abc123 (where abc123 is the SKU), and seeing a popup (or banner, etc.) on that page that says something like:
+
+> 18 people purchased this product yesterday
+
+I want that number (18) to be the actual number, pulled from Adobe Analytics purchase
+transactions from the previous day. When I visit any product page,
+Target will make a request to my remote offer API, pull that data by SKU, and return the offer HTML.
+
+---
+
+## How it will work
+
+The components:
+
+- Purchase data: pulled via the Adobe Analytics Reporting API and stored in a database
+- Remote Offer: an API endpoint that pulls data by SKU from the database and returns HTML
+- Target Activity: a Target activity that calls the remote offer endpoint
+- Launch: code in Launch calls Target on the product page and renders the returned offer HTML
+
+![Target Remote Offer](https://images.ctfassets.net/on47yk52ubpi/16Zoj2OSCljnpfSnjtcELa/c1d57847eccb42fc7ced0ee19752046f/socialproofremoteofferbuild.png)
+
+### Can't Target do this on its own? Why do I need AWS resources?
+
+Target alone has no mechanism to generate dynamic offers on-the-fly with real data. A remote offer endpoint lets you call an external API and use the returned HTML as the offer content. I use AWS for this type of setup, but you can use any cloud provider.
+
+- **Dynamic & Real Data usage**: We want the offer to reflect real numbers (e.g., yesterday’s purchases by product SKU), nothing is hardcoded.
+- **Performance**: Hitting the AA API when Target calls the remote offer would be slow, and depending on your traffic volume, probably expensive. Instead, we fetch and store once per day and serve from a database.
+- **Scalability**: AWS (EC2, Lambda, etc.) can scale with demand.
+
+### Purchase Data
+
+Every day, there will be an automation that pulls yesterday's purchases by SKU from the [Adobe Analytics Reporting API](https://developer.adobe.com/analytics-apis/docs/2.0/guides/endpoints/reports/) and stores it in a database. I store the data in a database instead of hitting the API every time because, although it will change every day, the data will not change between requests or users. Thus, it is more efficient to store it and call it by SKU than to submit a full report API call every time. Pro tip: Using the [Oberon Debugger](https://developer.adobe.com/cja-apis/docs/endpoints/reporting/debugger/) in Analytics workspace will make it much easier to craft parameters for the getReport endpoint.
+
+I'm not going to post a code example because there would be too many comments and explanations, but to set up this pull-and-store automation, I would use the [Adobe Auth Node JS SDK](https://github.com/adobe/auth-token) and [Adobe Analytics Node JS SDK](https://github.com/adobe/aio-lib-analytics), and set up a Node.js Lambda function to run daily.
+[Specifically, the getReport method](https://github.com/adobe/aio-lib-analytics?tab=readme-ov-file#AnalyticsCoreAPI+getReport).
+
+### Sample Purchase Data in Database from Adobe Analytics API
+
+| SKU    | Purchases | Last Updated          |
+| ------ | --------- | --------------------- |
+| ABC123 | 18        | (yesterday timestamp) |
+| DEF456 | 7         | (yesterday timestamp) |
+| GHI789 | 20        | (yesterday timestamp) |
+| JKL012 | 10        | (yesterday timestamp) |
+| MNO345 | 5         | (yesterday timestamp) |
+
+### The Remote Offer
+
+Now that I have a quickly accessible database of purchase data, I can build a remote offer that will pull the data by SKU
+and return the HTML for my popup, modal, etc. A Target Remote offer is a specific offer type that accepts an endpoint
+that Target will call and expect a response from.
+Basically, rather than crafting our offer in the Target UI, you can build your own endpoint that returns whatever you need and
+use a remote offer type to call it in an activity. Remote offers can be relative or absolute URLs, but if you want to pass
+data from a page the remote offer, for example the SKU, you will need to use a relative URL. This means that once
+the endpoint is created, you will need to give it a first party domain name in your sites DNS records.
+
+Given that when using the AEP Web SDK, you usually need to unpack and render the offer HTML anyway, you can choose exactly
+what the remote offer returns. For example, you can return the HTML for the offer, or you can return the data that the offer
+needs to render the HTML. I find it easiest to just return complete HTML for the offer in the form of a self invoking function
+that renders the complete UI component.
+
+I'm writing pseudocode here for brevity, but this is the general idea. In reality, you will probably add default offer
+content if no data is found, escape any special characters in the data, etc.
+
+```javascript
+app.get('/my/relative/url/:sku', (req, res) => {
+  const sku = req.params.sku
+  const purchases = db.get(sku)
+  if (!purchases) {
+    res.sendStatus(404)
+    return
+  }
+  // complete html for making a popup
+  res.json({
+    content: `
+      <script>
+        (function() {
+          const popup = document.createElement('div');
+          popup.style.position = 'absolute';
+          popup.style.top = '0';
+          popup.style.right = '0';
+          popup.style.background = 'white';
+          popup.style.padding = '1em';
+          popup.style.border = '1px solid black';
+          popup.innerHTML = \`${purchases} people purchased this product yesterday!\`;
+
+          document.body.appendChild(popup);
+        })();
+      </script>
+    `,
+    nom,
+  })
+})
+```
+
+### DNS Settings
+
+So assuming this endpoint is hosted on AWS, you will end up with url like https://ec2-18-222-1-234.us-east-2.compute.amazonaws.com/my/relative/url.
+You will need to create a domain alias in your DNS records to point to this endpoint so that Target can use it as a relative URL remote offer.
+How you do this will depend entirely on your setup, but if your website is www.example.com, you'll need this endpoint to be
+accessible at https://www.example.com/my/relative/url.
+
+### Target Setup
+
+Once the remote offer is setup and the domain alias is created, you need to create an activity in
+Target to use that endpoint as a remote offer.
+
+![relative url](https://images.ctfassets.net/on47yk52ubpi/5AsLfXY7x26tnUJ4qU8djA/9ddeac3e9737517afd777662c1223507/remoteoffer.png)
+
+![target activity](https://images.ctfassets.net/on47yk52ubpi/Q0EkDc3VSOp9Uu74dcEoY/4e2caee1c3c954b43b7152c81ba71f09/targetremoteactivity.png)
+
+### Launch Setup
+
+Once the endpoint is setup and named, and the activity is created in Target to use that endpoint as remote offer, you now
+need to call Target on the product page to trigger the activity. While doing so, you also need to pass the SKU to the activity
+which it will then use to call the remote offer and return the proper data. There are of course many ways to do this, but here
+is a simple example using the AEP Web SDK:
+
+```javascript
+// paraphrasing a bit here for brevity but see docs here:
+// https://experienceleague.adobe.com/docs/experience-platform/web-sdk/personalization/rendering-personalization-content.html
+alloy('sendEvent', {
+  renderDecisions: false,
+  xdm: {
+    eventType: 'decisioning.propositionFetch',
+  },
+  decisionScopes: ['productPage'], // aka mboxes
+  data: {
+    __adobe: {
+      target: {
+        // these are mbox parameters that are passed to the activity
+        parameters: {
+          SKU: _satellite.getVar('sku'),
+        },
+        profile: {
+          lastViewedSKU: _satellite.getVar('sku'),
+        },
+      },
+    },
+  },
+}).then((result) => {
+  if (result.propositions.length > 0) {
+    // find by scope productPage
+    const proposition = result.propositions.find((p) => p.scope === 'productPage')
+    if (proposition) {
+      const offer = proposition.offers[0]
+      const content = offer.content // this is the HTML returned from the remote offer
+      // render the offer content here!!!!!
+      // document.body.appendChild(content) or something like this
+    }
+  }
+})
+```
+
+Again, psuedocode but this is the general idea. Will extract the SKU from the URL with Launch
+and store it as a data element called `sku`. When someone visits a product page, this code
+will be triggered by a rule and pass the SKU and productPage scope to Target which will
+trigger the activity. The activity will then call the remote offer endpoint and return the
+HTML for the offer. The Web SDK will then render the offer HTML on the page when this promise
+is resolved.
+
+---
+
+### Final Thoughts
+
+This approach lets you run social proof experiments, powered by actual Analytics data, with scalable infrastructure.
+It is not free with all the AWS resources, API calls, etc., but again, this setup is scalable and can be used for any number of use cases.
+
+I lack access to the tooling to setup an actual demo site so this is all theoretical; I don't have access
+a personal website with thousands of product pages to test this out. If someone does it for real or wants to
+collaborate on a demo, please let me know!
+
+---
