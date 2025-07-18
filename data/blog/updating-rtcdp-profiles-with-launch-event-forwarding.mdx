@@ -15,7 +15,7 @@ an out of the box connector, but the latency of this method is unacceptable for 
 I need to market to users as soon as possible after they view a product or even potentially while they are still viewing it
 or are still in their same session. Therefore, I need to write to the RTCDP profile in real time.
 
-I unfortunately will need to be somewhat generic and abstract in
+Unfortunately, I will need to be somewhat generic and abstract in
 my descriptions and examples in this post because I lack the ability to make a true demo with real data.
 
 <img src="/static/images/rtcdp_event_forwarding_diagram.svg" alt="RTCDP Event Forwarding Diagram" />
@@ -27,13 +27,13 @@ my descriptions and examples in this post because I lack the ability to make a t
 
 ### The ante to play...
 
-I'm not going to go into specific details, but in order to do this you need to
+I'm not going to go into specific details, but in order to do this, you need to
 have the Adobe Web SDK deployed, schemas defined with primary identities, be familiar with the Adobe Experience Platform, etc.
 Basically, you need a mature, working deployment of the Adobe Experience Platform and know how to populate it with data.
 You also need to know how to interact with Adobe's APIs both from a "what values do I pass here" perspective
 and a "how do I authenticate" perspective. Finally, you need to have a datastream with event forwarding enabled.
 
-This process uses partial row updates via upserting. The steps for which are _very_ specific. You can find the
+This process uses partial row updates via upserting, the steps for which are _very_ specific. You can find the
 official docs here:
 
 https://experienceleague.adobe.com/en/docs/experience-platform/data-prep/upserts
@@ -47,7 +47,7 @@ have been deprecated. Always check the docs.
 ### How it works in a nutshell
 
 1. In AEP, you have a profile schema, dataset, and HTTP ingestion source data flow
-2. On the front end, a user views a product page with a SKU, triggers a Launch front end rule, and sends an XDM pageView event from the browser/app
+2. On the front end, a user views a product page with a SKU, triggers a Launch front-end rule, and sends an XDM pageView event from the browser/app
 3. On the back end, Event Forwarding sees the pageView event is a product page and triggers the RTCDP profile update rule
 4. The RTCDP profile update rule posts the SKU and user data to the AEP HTTP ingestion endpoint as upserted data
 5. The AEP HTTP ingestion endpoint ingests the data and updates the user's profile instantly because the dataset and schema are profile enabled
@@ -58,9 +58,9 @@ have been deprecated. Always check the docs.
 
 ### 1. The Adobe Experience Platform
 
-In order to write CDP profile updates in real time you need the following setup in AEP:
+In order to write CDP profile updates in real time, you need the following setup in AEP:
 
-- A schema with a primary identity field and a dataset that uses this schema. Both profile enabled.
+- A schema with a primary identity field and a dataset that uses this schema, both profile enabled.
 - An HTTP Ingestion Data Source with the "XDM Compatible" option **DISABLED!**
 - An example of the payload you will be sending to the AEP HTTP ingestion endpoint.
 - An HTTP ingestion data source with a dataflow that points to the above dataset.
@@ -103,7 +103,7 @@ the "XDM Compatible" option is **disabled**. It's counterintuitive, but unchecki
 important because you will be posting upsert data rows, not full XDM payloads.
 
 The next step is to upload your payload example. This is the data you will be posting to the AEP HTTP ingestion endpoint
-and mapping to your profile schema. Using my example above, mine would look something like:
+and mapping to your profile schema. Using my example, mine would look something like:
 
 ```json
 {
@@ -121,7 +121,7 @@ primary identity field, and the last viewed SKU goes to the lastViewedSKU field.
 
 #### IDs and Endpoints
 
-Once you have these things set up, head over to the data flow and look for the section titled "API Usage"
+Once you have these things set up, head over to the dataflow and look for the section titled "API Usage"
 and grab the `Dataflow ID` and `Dataset ID`.
 
 <img
@@ -129,12 +129,12 @@ and grab the `Dataflow ID` and `Dataset ID`.
   alt="API Usage"
 />
 <figure>
-  <figcaption>API Usage values, these will be used in the ingestion post calls</figcaption>
+  <figcaption>API Usage values—these will be used in the ingestion POST calls</figcaption>
 </figure>
 
 Then go to AEP > Sources > HTTP API and select your new source.
 This will bring up a streaming endpoint URL.
-This is what event forwarding will be posting to so keep it handy.
+This is what Event Forwarding will be posting to, so keep it handy.
 
 <img
   src="https://images.ctfassets.net/on47yk52ubpi/4PQhx7W9TGQ6VgyYdUpRIb/1279b87ed96b194bac5ac69f546592da/datasetendpoint.png"
@@ -165,11 +165,11 @@ then go back and remove everything that is not needed.
   alt="API Usage"
 />
 <figure>
-  <figcaption>AEP API inside a developer console project</figcaption>
+  <figcaption>AEP API inside a Developer Console project</figcaption>
 </figure>
 
 Keep the Developer Console credentials close at hand. You will need them for the next step.
-The Adobe APIs are a separate post in and of themselves, but if you run into issues authenticating
+The Adobe APIs are a separate post in and of themselves, but if you run into issues authenticating,
 I suggest the official docs here: https://developer.adobe.com/developer-console/docs/guides/authentication/
 
 ### 3. Adobe Launch (aka Tags aka Data Collection)
@@ -178,13 +178,13 @@ This is where having a fully built-out, well-functioning Launch property is a hu
 I'm not going to go deep on Launch here as setups can vary, but I trust that if you have made it this far
 you know how to work in Launch or at least know who to talk to if you don't.
 
-In Launch (the front end, not event forwarding), I have a rule that
+In Launch (the front end, not Event Forwarding), I have a rule that
 triggers on page view events. The XDM object that is sent with this rule contains some logic that,
 if the page view occurs on a product page (say with a SKU in the URL like example.com/product/12345), sets the `xdm.commerce.productViews.value` to `1`,
-sets the `productListItems` array to contain the SKU of the product, and the `customer ID` for my use in event forwarding.
+sets the `productListItems` array to contain the SKU of the product, and the `customer ID` for my use in Event Forwarding.
 
-So I know a product page view occurred and I have sent it off via an alloy `sendEvent` call. Since my datastream has
-event forwarding enabled, this event will be forwarded to my event forwarding property...
+So I know a product page view occurred and I have sent it off via an Alloy `sendEvent` call. Since my datastream has
+Event Forwarding enabled, this event will be forwarded to my Event Forwarding property...
 
 ### 4. Event Forwarding
 
@@ -215,7 +215,7 @@ The meat of the request is the body payload in the POST request. The body payloa
 Note that the header here is different from the headers in the POST request.
 
 Here is an example of the entire POST body that would go to this ingestion streaming endpoint. You will
-recognize most of these keys from various settings
+recognize most of these keys from various settings:
 
 The most important key is the `header.operations.data` key. This is where you specify the operation you want to perform.
 In this case, I am using `merge` to upsert the data into the dataset instead of creating a new record. This is the
@@ -261,15 +261,15 @@ a piece of JSON that has `header` and `body` keys. Make sure you put everything 
   <figcaption>Upsert POST Body data</figcaption>
 </figure>
 
-The double curly braces are Event Forwarding's syntax for accessing data elements. Just like how Launch uses percentage signs.
-For my `customer_id` and `SKU` data elements, I have them mapped as path type data elements from front end XDM payload.
+The double curly braces are Event Forwarding's syntax for accessing data elements, just like how Launch uses percentage signs.
+For my `customer_id` and `SKU` data elements, I have them mapped as path-type data elements from the front-end XDM payload.
 [See official docs for Event Forwarding here.](https://experienceleague.adobe.com/en/docs/experience-platform/tags/event-forwarding/overview#data-elements)
 
 ---
 
 ### Authentication in Event Forwarding
 
-To send POST requests via the Event Forwarding cloud connector to the ingestion endpoint, I need to authenticate. I do this by using the API keys I created in the Adobe Developer Console
+To send POST requests via the Event Forwarding Cloud Connector to the ingestion endpoint, I need to authenticate. I do this by using the API keys I created in the Adobe Developer Console
 to exchange for an access token. I then use that token in my Authorization header alongside my other API credentials. [Thankfully, Event Forwarding has built-in mechanisms to help with this in the
 "Secrets" section.](https://experienceleague.adobe.com/en/docs/experience-platform/tags/event-forwarding/secrets)
 
@@ -351,9 +351,9 @@ and use Assurance to verify that the calls are being sent successfully. You can 
 the Cloud Connector POST request to the streaming endpoint. I would still keep the API client open to view
 my test profile and make sure the updates are occurring.
 
-In Assurance, search for your endpoint url (something like `https://dcs.adobedc.net/collection/12345....`)
+In Assurance, search for your endpoint URL (something like `https://dcs.adobedc.net/collection/12345....`)
 and you should see the POST request in the Assurance logs. If all is well, you'll see a 200 response code
-and the response from the streaming endpoint with the inlet ID, etc. If you see a non 200 response, there
+and the response from the streaming endpoint with the inlet ID, etc. If you see a non-200 response, there
 should be an error message to help you debug. The most common problem is incorrectly formatted payload data,
 hence my wrapping of data element values in double quotes in the images above like `"{{customer_id}}"`.
 This ensures that the value will be a string and not a number, boolean, or piece of unquoted text just floating in the payload.
@@ -370,6 +370,6 @@ This ensures that the value will be a string and not a number, boolean, or piece
 
 ### Final Thoughts
 
-Is this the _only_ way to streaming real time profile updates to AEP? No. Does this work? Yes.
-Is it efficient? I'm not sure. Should you give it a try? Yes and if it works for you let me know
-and I will venmo you $5. Yes I am serious.
+Is this the _only_ way to stream real-time profile updates to AEP? No. Does this work? Yes.
+Is it efficient? I'm not sure. Should you give it a try? Yes, and if it works for you, let me know
+and I will Venmo you $5. Yes, I am serious.
