@@ -1,0 +1,375 @@
+---
+title: 'Updating Adobe Experience Platform RTCDP profiles with Launch Event Forwarding'
+date: '2025-07-18'
+tags: ['adobe launch', 'event forwarding', 'adobe experience platform', 'adobe tags']
+draft: false
+summary: 'How to update Adobe Experience Platform RTCDP profiles in real-time with Launch Event Forwarding'
+---
+
+## Problem Statement
+
+I want to store the SKU of the most recent product a user viewed in their RTCDP profile so
+that I can personalize their experience on the site/app or in marketing communications as soon as possible.
+I currently write this data to the CDP profile via
+an out of the box connector, but the latency of this method is unacceptable for my use case.
+I need to market to users as soon as possible after they view a product or even potentially while they are still viewing it
+or are still in their same session. Therefore, I need to write to the RTCDP profile in real time.
+
+I unfortunately will need to be somewhat generic and abstract in
+my descriptions and examples in this post because I lack the ability to make a true demo with real data.
+
+<img src="/static/images/rtcdp_event_forwarding_diagram.svg" alt="RTCDP Event Forwarding Diagram" />
+<figure>
+  <figcaption>AI fever dream interpretation of RTCDP Updating</figcaption>
+</figure>
+
+## Solution Overview
+
+### The ante to play...
+
+I'm not going to go into specific details, but in order to do this you need to
+have the Adobe Web SDK deployed, schemas defined with primary identities, be familiar with the Adobe Experience Platform, etc.
+Basically, you need a mature, working deployment of the Adobe Experience Platform and know how to populate it with data.
+You also need to know how to interact with Adobe's APIs both from a "what values do I pass here" perspective
+and a "how do I authenticate" perspective. Finally, you need to have a datastream with event forwarding enabled.
+
+This process uses partial row updates via upserting. The steps for which are _very_ specific. You can find the
+official docs here:
+
+https://experienceleague.adobe.com/en/docs/experience-platform/data-prep/upserts
+
+I had some trouble with upserting at first. I was pulling entire profiles and reposting
+them in their entirety with new data instead of updating _just_ what needed to be updated.
+This was because I kept erasing them due to using outdated documentation.
+If you experience this, make sure you follow the instructions linked above carefully. Several methods
+have been deprecated. Always check the docs.
+
+### How it works in a nutshell
+
+1. In AEP, you have a profile schema, dataset, and HTTP ingestion source data flow
+2. On the front end, a user views a product page with a SKU, triggers a Launch front end rule, and sends an XDM pageView event from the browser/app
+3. On the back end, Event Forwarding sees the pageView event is a product page and triggers the RTCDP profile update rule
+4. The RTCDP profile update rule posts the SKU and user data to the AEP HTTP ingestion endpoint as upserted data
+5. The AEP HTTP ingestion endpoint ingests the data and updates the user's profile instantly because the dataset and schema are profile enabled
+
+---
+
+## Solution Details
+
+### 1. The Adobe Experience Platform
+
+In order to write CDP profile updates in real time you need the following setup in AEP:
+
+- A schema with a primary identity field and a dataset that uses this schema. Both profile enabled.
+- An HTTP Ingestion Data Source with the "XDM Compatible" option **DISABLED!**
+- An example of the payload you will be sending to the AEP HTTP ingestion endpoint.
+- An HTTP ingestion data source with a dataflow that points to the above dataset.
+
+#### Schema & Dataset
+
+If you have made it this far and understand what I am talking about in this post,
+you probably already have a schema with a primary identity field. I'm not going to go over that here—just know you need it.
+Look for the fingerprint image on one of your schema fields. That is your primary, cross-channel identity namespace field. It's
+likely named something like "customer id" :)
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/1G7JtLqgUXUt15wSn25Drj/71a69a0a5e2dbb2a21bde248ad6ff614/identitySettings.png"
+  alt="Identity Settings"
+/>
+<figure>
+  <figcaption>The fingerprinted field will also have these settings enabled</figcaption>
+</figure>
+
+This schema also needs to be profile enabled. Look for the profile switch and check the box.
+[You will get a warning about this being a serious action. Make sure you understand what you are doing.](https://experienceleague.adobe.com/en/docs/experience-platform/xdm/ui/resources/schemas#profile)
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/3XLT0VosTkm24gGLyK6BgY/e53da76901f6f5be6840fbb2c7ee7c3b/profiletab.png"
+  alt="Profile Tab"
+/>
+<figure>
+  <figcaption>Check this box in the schema and dataset if it's not checked already.</figcaption>
+</figure>
+
+Once you have your schema set up, you can create a dataset. This is another thing you may already have
+if you are already consuming the profile schema in some way. If not, create a new one and select the schema you just created.
+The dataset also needs to be profile enabled. Look for the profile switch and check the box.
+
+#### HTTP Ingestion Data Source
+
+Once you know which schema and dataset you are going to use, you can create an HTTP Ingestion Data Source.
+When creating a new one, you will enter a creation flow process. After naming this source, make sure
+the "XDM Compatible" option is **disabled**. It's counterintuitive, but unchecking this option is super
+important because you will be posting upsert data rows, not full XDM payloads.
+
+The next step is to upload your payload example. This is the data you will be posting to the AEP HTTP ingestion endpoint
+and mapping to your profile schema. Using my example above, mine would look something like:
+
+```json
+{
+  "customerId": "abc123",
+  "lastViewedSKU": "12345"
+}
+```
+
+After you upload this file, you will be taken to the dataset selection page. You can select your profile dataset that
+you're already familiar with or just created, or you can create a new one.
+
+After selecting your dataset, you will be taken to the data prep mapping page. This is where you connect
+the data from your payload example to the schema fields. In my example, the customer ID goes to my
+primary identity field, and the last viewed SKU goes to the lastViewedSKU field. It's pretty self-explanatory.
+
+#### IDs and Endpoints
+
+Once you have these things set up, head over to the data flow and look for the section titled "API Usage"
+and grab the `Dataflow ID` and `Dataset ID`.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/b8H2WtY54NU93N2a1SgBQ/13b2702215b2b070e248c01e97a94994/apidfusage.png"
+  alt="API Usage"
+/>
+<figure>
+  <figcaption>API Usage values, these will be used in the ingestion post calls</figcaption>
+</figure>
+
+Then go to AEP > Sources > HTTP API and select your new source.
+This will bring up a streaming endpoint URL.
+This is what event forwarding will be posting to so keep it handy.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/4PQhx7W9TGQ6VgyYdUpRIb/1279b87ed96b194bac5ac69f546592da/datasetendpoint.png"
+  alt="Dataset Endpoint"
+/>
+<figure>
+  <figcaption>Streaming Endpoint URL</figcaption>
+</figure>
+
+---
+
+### 2. The Adobe Developer & Admin Consoles
+
+Event Forwarding will need to authenticate to the AEP HTTP ingestion endpoint in order to securely post data to it
+via the streaming endpoint URL. To do so, you will need to create API credentials in the Adobe Developer Console.
+
+Inside the Adobe Developer Console you will need to create a new project and add an AEP API key to it.
+The profile for this API key will need all the relevant permissions. The most important of which is
+the ability to read profiles (helpful for debugging) and the ability to write to datasets.
+
+If, down the line, you run into permission issues (i.e., you can't read profiles or write to datasets),
+head over to the Admin Console and check the permissions for the API key. There are _many_ permission settings
+and they can be set at the sandbox level. When setting things up, assuming you are an admin, I find it easy to grant _all_ permissions,
+then go back and remove everything that is not needed.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/5yqjcts9OJJS0UIU3TQUp4/ee8d0ba24ac6362e4a3e245e2b923821/aepapi.png"
+  alt="API Usage"
+/>
+<figure>
+  <figcaption>AEP API inside a developer console project</figcaption>
+</figure>
+
+Keep the Developer Console credentials close at hand. You will need them for the next step.
+The Adobe APIs are a separate post in and of themselves, but if you run into issues authenticating
+I suggest the official docs here: https://developer.adobe.com/developer-console/docs/guides/authentication/
+
+### 3. Adobe Launch (aka Tags aka Data Collection)
+
+This is where having a fully built-out, well-functioning Launch property is a huge advantage.
+I'm not going to go deep on Launch here as setups can vary, but I trust that if you have made it this far
+you know how to work in Launch or at least know who to talk to if you don't.
+
+In Launch (the front end, not event forwarding), I have a rule that
+triggers on page view events. The XDM object that is sent with this rule contains some logic that,
+if the page view occurs on a product page (say with a SKU in the URL like example.com/product/12345), sets the `xdm.commerce.productViews.value` to `1`,
+sets the `productListItems` array to contain the SKU of the product, and the `customer ID` for my use in event forwarding.
+
+So I know a product page view occurred and I have sent it off via an alloy `sendEvent` call. Since my datastream has
+event forwarding enabled, this event will be forwarded to my event forwarding property...
+
+### 4. Event Forwarding
+
+This is where the magic happens.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/2q1lGoPdrhp0wFx8V5vzWp/cf5a3dd9b36f281708b817601c9c4f3a/upserteventforwarding.png"
+  alt="Event Forwarding"
+/>
+<figure>
+  <figcaption>The Event Forwarding rule</figcaption>
+</figure>
+
+#### Conditions
+
+The conditions are pretty self-explanatory. I am only triggering this event forwarding rule for pageView events that occur on a product page _and_
+when the necessary data exists because it doesn't hurt to ensure the data is there. I need the customer ID to tie
+the action to their identity, and obviously I need the SKU of the latest product they viewed to update their profile.
+
+#### Actions
+
+I am using the Adobe Cloud Connector to make a POST request to the HTTP Ingestion endpoint.
+Remember this URL comes from the dataflow settings. It looks like
+
+`https://dcs.adobedc.net/collection/12345....`
+
+The meat of the request is the body payload in the POST request. The body payload has 2 top-level keys, `headers` and `body`.
+Note that the header here is different from the headers in the POST request.
+
+Here is an example of the entire POST body that would go to this ingestion streaming endpoint. You will
+recognize most of these keys from various settings
+
+The most important key is the `header.operations.data` key. This is where you specify the operation you want to perform.
+In this case, I am using `merge` to upsert the data into the dataset instead of creating a new record. This is the
+updating portion. Without this key, the data would be appended to the dataset instead of being updated.
+
+The `body` object is where you specify the data you want to upsert. This should correlate to the sample payload
+you provided in the dataflow settings. There are a few ways to format this data as well as to specify the
+dataflow. [See the official docs here for formatting options and samples](https://experienceleague.adobe.com/en/docs/experience-platform/data-prep/upserts)
+
+Note that the `body` setting is where you specify the data you want to post. As part of this, Adobe wants
+a piece of JSON that has `header` and `body` keys. Make sure you put everything in its proper place.
+
+```json
+{
+  "header": {
+    "flowId": "abcd-1234-xyzz-1234",
+    "imsOrgId": "12345678@AdobeOrg",
+    "datasetId": "11111aaaa2222bbbb",
+    "operations": {
+      "data": "merge"
+    }
+  },
+  "body": {
+    "_my_org_here": {
+      "identity": {
+        "customer_id": "{{customer_id}}"
+      },
+      "foo": {
+        "bar": {
+          "lastViewedSKU": "{{SKU}}"
+        }
+      }
+    }
+  }
+}
+```
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/7q5hkxkqbp3GsOvfYia7b8/ed585bb69b09435b59cd586719f7fc51/upsertpostbody.png"
+  alt="Upsert Post Body"
+/>
+<figure>
+  <figcaption>Upsert POST Body data</figcaption>
+</figure>
+
+The double curly braces are Event Forwarding's syntax for accessing data elements. Just like how Launch uses percentage signs.
+For my `customer_id` and `SKU` data elements, I have them mapped as path type data elements from front end XDM payload.
+[See official docs for Event Forwarding here.](https://experienceleague.adobe.com/en/docs/experience-platform/tags/event-forwarding/overview#data-elements)
+
+---
+
+### Authentication in Event Forwarding
+
+To send POST requests via the Event Forwarding cloud connector to the ingestion endpoint, I need to authenticate. I do this by using the API keys I created in the Adobe Developer Console
+to exchange for an access token. I then use that token in my Authorization header alongside my other API credentials. [Thankfully, Event Forwarding has built-in mechanisms to help with this in the
+"Secrets" section.](https://experienceleague.adobe.com/en/docs/experience-platform/tags/event-forwarding/secrets)
+
+To create an access token secret, go to Secrets and select `OAuth 2` as the type.
+You will recognize most of the fields here from the Developer Console API keys you created earlier. The only
+things you will need to add are the `grant_type` and `Token URL` fields in the "Credential Options" section.
+The grant type should be `client_credentials` and the token URL should be
+
+`https://ims-na1.adobelogin.com/ims/token/v3`.
+
+You can hit "Generate Test Token" to verify that everything is working correctly. I like to attach the secrets to the
+environments as it makes it easier to differentiate between writing to prod and dev.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/6irW2F9WDanRlgifYmnnOp/5b24c8bfca1a0508c13fdcb71dd19b89/accesstokenfields.png"
+  alt="Access Token Fields"
+/>
+<figure>
+  <figcaption>Access Token Fields</figcaption>
+</figure>
+
+Now that the access token secret is set up, you need to make a data element to access it. Then you can use that data element in your rules
+like I am doing here:
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/7KORIawloZQ2fXGUBI8x1d/213db26c267a318b5bf30886839e159d/accesstokendataelement.png"
+  alt="Access Token Data Element"
+/>
+<figure>
+  <figcaption>Access Token Data Element</figcaption>
+</figure>
+
+Adobe handles the storage and expiration of the access token for you. It will get a new one when needed.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/2pnXCXijAe03KdqCLoDTxF/addc51e518906cc957e29f4bad5deeb8/getcurrentprofileauth.png"
+  alt="Access Token Data Element"
+/>
+<figure>
+  <figcaption>Using secret data elements in rules</figcaption>
+</figure>
+
+I am also saving my API credentials as secrets and making data elements out of them as those are also needed in the headers for the API POST.
+The process for saving these secrets is the same—just select `Token` as the type and fill in the field.
+
+### Debugging & Verification of Profile Updates
+
+#### Use API clients
+
+Before publishing any of this, there are a few ways to verify that you have everything
+set up correctly and the profile is updating. The first thing would be to use an API client like
+Postman or Insomnia (my preference) to set up an example POST request using a non-production
+customer ID and SKU and working in your development AEP sandbox. This is exactly what I did
+prior to writing anything in Launch. You can use the [Entities API Endpoint](https://experienceleague.adobe.com/en/docs/experience-platform/profile/api/entities)
+to read profiles by _your_ primary identifier (in my case `customer_id`) and see if the profile
+indeed updated when you POST to the dataflow.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/2AnOHWPk3XZgoUmZpPrIOj/2d9aae89c968e43a4694de38e73a7fc7/insomniaprofilecheck.png"
+  alt="Insomnia Profile Check"
+/>
+<figure>
+  <figcaption>Insomnia Profile Check call example</figcaption>
+</figure>
+
+The profile updates will be obvious (either it updated or it didn't). If you
+are POSTing successfully to the dataset, but the profile isn't updating, first check
+the dataflow UI to see if things are ingesting correctly. The successful response
+from the streaming endpoint just says you sent data correctly, not _necessarily_ that
+it was ingested as expected. If it is ingesting correctly, check the profile enablement settings
+on the dataset and schema to make sure they are enabled. Finally, check the upserting docs again.
+Again, there are very specific steps in there to achieve this, and if you don't follow them precisely,
+you will not get the expected results. Ask me how I know :)
+
+#### Use Assurance
+
+Once you have things working in an API client, you can put it all together in event forwarding
+and use Assurance to verify that the calls are being sent successfully. You can use Assurance to see
+the Cloud Connector POST request to the streaming endpoint. I would still keep the API client open to view
+my test profile and make sure the updates are occurring.
+
+In Assurance, search for your endpoint url (something like `https://dcs.adobedc.net/collection/12345....`)
+and you should see the POST request in the Assurance logs. If all is well, you'll see a 200 response code
+and the response from the streaming endpoint with the inlet ID, etc. If you see a non 200 response, there
+should be an error message to help you debug. The most common problem is incorrectly formatted payload data,
+hence my wrapping of data element values in double quotes in the images above like `"{{customer_id}}"`.
+This ensures that the value will be a string and not a number, boolean, or piece of unquoted text just floating in the payload.
+
+<img
+  src="https://images.ctfassets.net/on47yk52ubpi/5v8V903FcUHDrPNM7bgtZL/54542c7356d2d6f00e393d8d95bc097b/assurancecheck.png"
+  alt="Assurance Check"
+/>
+<figure>
+  <figcaption>Assurance Check call example</figcaption>
+</figure>
+
+---
+
+### Final Thoughts
+
+Is this the _only_ way to streaming real time profile updates to AEP? No. Does this work? Yes.
+Is it efficient? I'm not sure. Should you give it a try? Yes and if it works for you let me know
+and I will venmo you $5. Yes I am serious.
