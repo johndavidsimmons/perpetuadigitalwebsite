@@ -7,15 +7,16 @@ export const metadata = {
 
 const Experience = [
   {
-    title: 'Senior Analytics Engineer',
+    title: 'Senior Software Engineer',
     company: 'Marriott Hotels',
     startDate: '9/24',
     endDate: 'Present',
     description:
-      'I provide comprehensive guidance on the implementation and deployment of Adobe Experience Cloud solutions, \
-      including Adobe Launch, Adobe Analytics, Adobe Target, and the Adobe Experience Platform. My responsibilities \
-      include technical implementation and development and stakeholder enablement, including creating technical documentation, \
-      conducting technical training, and mentoring team members.',
+      'I serve as a technical and architectural subject matter expert for all things Adobe. \
+      Including, but not limited to: AEP, RTCDP, Launch, Analytics, and Target. \
+      The day to day responsibilities of my role vary greatly, but I spend 99% of my time in Adobe tools. \
+      Some examples of my recent projects include setting up Adobe event forwarding rules to write RTCDP \
+      profile data when customers favorite hotels, rearchitecting our AA marketing channel processing rules to better represent our conversion data on executive dashboards, upgrading various digital properties to the AEP SDKs, building a home grown documentation site to visualize our data layers to XDM keys. I not only do the technical implementation of these projects, but I drive them as well. I do trainings and presentations for technical and non-technical people alike, write documentation, build proof of concepts, etc. ',
   },
   {
     title: 'Senior Software Engineer',
@@ -24,8 +25,7 @@ const Experience = [
     endDate: '8/24',
     description: `As a Senior Software Engineer, my primary focus was integrating our website and mobile
 app with analytics vendors and services such as Adobe, Amplitude, Segment, Google, and
-Singular. This role required expertise in our codebases and technology stack and a deep
-understanding of vendor libraries. In addition to instrumenting data collection with these
+Singular. This role required expertise in our codebases and technology stack (React Native & GraphQL). In addition to instrumenting data collection with these
 tools, I collaborated closely with our Product and Marketing teams to develop website and
 app experimentation. Furthermore, I served as an advisor on our data governance committee,
 to help ensure data quality and standardization.`,
@@ -107,6 +107,15 @@ const Skills = [
   'Adobe Launch',
   'Adobe Experience Platform (AEP)',
   'AEP Web SDK',
+  'ObservePoint',
+  'Testing/QA Automation',
+  'Technical Documentation',
+  'Cookie Compliance Tools',
+  'Confluence',
+  'Jira',
+  'Agile',
+  'Marketing Pixels',
+  'Server Side Tracking',
   'JavaScript',
   'TypeScript',
   'React',
@@ -189,7 +198,8 @@ const Resume = () => {
       </ul>
       <SectionHeading title="Summary" />
       <p className="text-lg mb-4 print:text-base print:mb-2">
-        A software developer who specializes in the Adobe Experience Cloud.
+        Software engineer with 10 years of experience specializing in Adobe Experience Cloud
+        technical implementation, stakeholder enablement, and project consulting.
       </p>
       <Bumper />
       <SectionHeading title="Certifications" />
@@ -218,7 +228,7 @@ const Resume = () => {
         ))}
       </ul>
       <Bumper />
-      <SectionHeading title="Experience" className="print:break-before-page print:mt-8" />
+      <SectionHeading title="Experience" className="print:mt-8" />
       <ul className="list-none mb-4 print:mb-2">
         {Experience.map((exp, index) => (
           <li key={index} className="pb-4 print:pb-2">
