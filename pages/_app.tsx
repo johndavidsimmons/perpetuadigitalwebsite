@@ -18,6 +18,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <ThemeProvider attribute="class" defaultTheme={siteMetadata.theme}>
       <Head>
         <meta content="width=device-width, initial-scale=1" name="viewport" />
+        <script src="/static/scripts/cookieconsent.js"></script>
         <script src="/static/scripts/prehide.js" async></script>
         <script
           src="https://assets.adobedtm.com/9d5ea4d031a2/94b8b3ffca90/launch-bd659f5c1e9e.min.js"
