@@ -9,31 +9,44 @@ summary: 'Consent management in Adobe Experience Platform Web SDK with Launch. H
 
 ## Introduction
 
-Lets get right into it. You need to manage a user's consent in order to collect data about them
+Let's get right into it. You need to manage a user's consent in order to collect data about them
 for analytics or marketing purposes. This is especially true if your visitors are outside the United States.
 The AEP Web SDK provides mechanisms to handle this at the configuration level.
 This means you can queue events until the consent status is known and send data only when explicitly allowed by the user
 or send nothing if not allowed.
 This also means that if you are using the AEP Web SDK with Launch,
-you do not need to do consent checks in a individual rule firing conditions.
+you do not need to do consent checks in individual rule firing conditions.
+
+This video demonstrates the functionality outlined in the post:
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/MiBvmu1uXf8?si=2po4M3pG3eBp4b-h"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
 
 ## Cookie Consent Managers
 
 If you are reading this you are probably familiar with Cookie Consent Managers (CCMs).
 The popular ones in our world being OneTrust and TrustArc. CCMs allow a user
 to opt in or out of cookies and other technologies on a website.
-They do a little more than that but that the basic gist. This consent status
+They do a little more than that, but that's the basic gist. This consent status
 is then used to determine whether or not sending data to a third party
 such as a marketing pixel or analytics tool is allowed.
 
-The AEP Web SDK does not have a built in CCM, nor can its consent settings control your outgoing requests to marketing pixels
-(you still need to manage that in rule conditions) it can however control outgoing data
+The AEP Web SDK does not have a built in CCM, nor can its consent settings control your outgoing requests to marketing pixels;
+you still need to manage that in rule conditions. It can, however, control outgoing data
 to your datastream using the `defaultConsent` settings in your AEP configuration settings
-and the `setConsent` action in your Launch library.
-This means that you can control whether or not to send data to your datastream based soley
-on the user's consent and not in each rule condition that sends AEP data.
+and the `setConsent` action.
+This means that you can control whether or not to send data to your datastream based solely
+on the user's consent settings and not to check for it in each rule condition that sends AEP data.
 
-On this site I actually have a fake CCM where can accept or reject cookies. You may have seen it upon your visit.
+On this site I actually have a fake CCM where you can accept or reject cookies. You can see it by adding `consent=true` to the query string.
 This will set a cookie called `cookieConsent` to `accepted` or `rejected`.
 I will use this to set the consent status in my AEP Web SDK.
 
@@ -49,14 +62,14 @@ I will use this to set the consent status in my AEP Web SDK.
   <figcaption>Fake CCM cookie, pretend its OneTrust or Trustarc :)</figcaption>
 </figure>
 
-Lets wire this cookie up to the AEP Web SDK.
+Let's wire this cookie up to the AEP Web SDK.
 
 <hr />
 
 ## Data Elements
 
 The first thing to do is store the cookie value in a data element.
-Later, I will set up a Launch rule to react to the `cookieConsent` cookie.
+Later, I will set up a Launch rule to react to the `cookieConsent` cookie changing or coming into existence.
 
 ![cookie consent data element](https://images.ctfassets.net/on47yk52ubpi/2cjqDB111RQNQVGL4VThp6/cd734d50e92d3fd6ee4bdbc09bb191fe/cookieconsentdataelement.png)
 
@@ -64,7 +77,7 @@ Later, I will set up a Launch rule to react to the `cookieConsent` cookie.
   <figcaption>Cookie consent data element. Mind blowing stuff here I know :)</figcaption>
 </figure>
 
-To convert the cookie to a value that the Web SDK can use, either `in`, `out`, or `pending`, I will use my favorite extenion: Mapping Table.
+To convert the cookie to a value that the Web SDK can use, either `in`, `out`, or `pending`, I will use my favorite extension: Mapping Table.
 This data element which I'll call `Consent Status` will default to `pending`.
 This means if the data element `cookieConsent` is `undefined` (ie cookie does not exist) or is something other than `accepted` or `rejected`,
 the default consent status will be set to `pending` and the Web SDK will wait for
@@ -76,7 +89,7 @@ the consent status to be known before determining whether to send data.
   <figcaption>Consent status data element</figcaption>
 </figure>
 
-Thats all the data elements I need. I could probaly do this in one, but I find this more clear.
+That's all the data elements I need. I could probably do this in one, but I find this more clear.
 I like to use out of the box tooling whenever possible.
 
 <hr />
@@ -84,7 +97,7 @@ I like to use out of the box tooling whenever possible.
 ## Default Consent
 
 Inside the configuration settings of your AEP Extension in Launch there is a section called _Consent_.
-This is the UI equivalent of calling the [`defaultConsent`](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/configure/defaultconsent) function.
+Behind the scenes, this is the [`defaultConsent`](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/configure/defaultconsent) setting.
 This is telling the Web SDK what to do when the consent status is unknown.
 You set it to `in` to send data to your datastream by default,
 `out` to not send data to your datastream by default,
@@ -96,10 +109,11 @@ but may not be known when the AEP Web SDK loads.
 
 ### Loading your CCM with Launch
 
-Quick aside here: I think the your consent manager is a mission critical tool and should be loaded
+Quick aside here: I think your consent manager is a mission critical tool and should be loaded
 by the application itself, not in Launch. I say this because more and more these days, consent is a legal
-requirement and should be considered part of a sites critical infrastructure not loaded by a tag manager.
-The site itself loading the CCM also allows you to load if _before_ the need for consent decisions are made (ie when
+requirement and should be considered part of a sites critical infrastructure. In my opinion, this disqualifies it
+from being loaded by a tag manager.
+The site itself loading the CCM also allows you to load it _before_ the need for consent decisions are made (ie when
 Launch or GTM loads and needs to know the consent status before doing stuff.)
 
 I am going to set Default Consent to my Consent Status data element. This will do 2 things:
@@ -140,14 +154,14 @@ Once the Web SDK loads and its default consent is set, there are a few scenarios
 
 In the first case, I don't need to do anything. The consent settings can remain as is because the user, by nature of their
 actions or their geographic location has expressed their consent desires.
-They almost certainly have a consent cookie from Adobe as well. More on that in a second.s
+They almost certainly have a consent cookie from Adobe as well. More on that in a second.
 I can set consent again, but I will just be telling
 the Web SDK something it already knows.
 
 The second scenario is where things are interesting. I do not yet know the user's consent status.
 Likely because they are a new visitor. The CCM cookie is not present or undefined; the default consent is set to `pending`
-and awaiting updating via the Set Consent action. I need to flip `pending` to `in` or `out` as
-soon as I am able to. Enter data element change
+and awaiting an update via the Set Consent action. I need to flip `pending` to `in` or `out` as
+soon as I am able to. Enter the data element change
 and set consent action.
 
 ![set consent rule](https://images.ctfassets.net/on47yk52ubpi/lGRYbDGBY8p5v0rtRZeEo/9e8c6d14aa5627219ec4e088704a0c89/setconsentrule.png)
@@ -171,7 +185,7 @@ This will cover a user setting their consent status for the first time or a user
 
 I want prevent this rule from firing if the consent status is `pending`.
 Set Consent (this version I am using) only accepts `in` or `out` as a value. I'm sure there
-are some weird scenarios this rule won't cover, but this exmaple should cover most normal cases.
+are some weird scenarios this rule won't cover, but this example should cover most normal cases.
 I can use an except condition to prevent the rule from firing if the consent status is `pending`
 which is its default setting when there is no CCM consent cookie.
 
@@ -187,7 +201,7 @@ The Web SDK extension comes prepackaged with Set Consent action. There are a lot
 and I'm sure there will be more by the time you read this. I'm not going to get into the specifics of each one, and there is a whole other layer to consent in AEP where you use this
 action to set device level consent for individual CDP profiles. However, my simple example is representative
 of what the Set Consent action does and how it can be used to update the consent status of the Web SDK regardless of the specific settings you employ.
-I encourage you to read the [official documetnation for setConsent](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/setconsent) as it goes quite deep. )
+I encourage you to read the [official documentation for setConsent](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/commands/setconsent) as it goes quite deep.
 
 When the cookie pops into existence, the data element change action will fire and update the consent status of the Web SDK.
 This will cause the Web SDK to send data to your datastream if the consent status is `in` or not send data if the consent status is `out`.
@@ -233,5 +247,15 @@ cookie as its reference when determining whether or not to send data to your dat
 
 ## Video Demo
 
-This is much easier to see in action:
-[YOUTUBE VIDEO HERE]
+This is much easier to see in action (same video as above)
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/MiBvmu1uXf8?si=2po4M3pG3eBp4b-h"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
