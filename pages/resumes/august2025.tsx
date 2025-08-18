@@ -11,7 +11,14 @@ const Experience = [
     company: 'Marriott Hotels',
     startDate: '9/24',
     endDate: 'Present',
-    description: `I serve as a technical and architectural subject matter expert for all things Adobe. Including, but not limited to: AEP, RTCDP, Launch, Analytics, and Target. The day to day responsibilities of my role vary greatly, but I spend 99% of my time in Adobe tools. Some examples of my recent projects include setting up Adobe event forwarding rules to write RTCDP profile data when customers favorite hotels, rearchitecting our AA marketing channel processing rules to better represent our conversion data on executive dashboards, upgrading various digital properties to the AEP SDKs, building a home grown documentation site to visualize our data layers to XDM keys. I not only do the technical implementation of these projects, but I drive them as well. I do trainings and presentations for technical and non-technical people alike, write documentation, build proof of concepts, etc.`,
+    description: `I serve as a technical and architectural subject matter expert for all Experience Cloud products. 
+    Such as: AEP, RTCDP, Launch, Analytics, and Target. 
+    Integrating apps to natively read and write to RTCDP profiles for personalization purposes, 
+    building a documentation site from scratch to visualize our data layer variables to XDM schemas.
+    upgrading various digital properties to the AEP SDKs,
+  rearchitecting marketing channel processing rules to better represent conversion channel data on executive dashboards, etc.
+  I not only do the technical implementation of these projects, but I drive them from a business perspective as well. 
+    I also do trainings and presentations for technical and non-technical people audiences, build proof of concepts, and write documentation.`,
   },
   {
     title: 'Senior Software Engineer',
@@ -71,6 +78,12 @@ const Certifications = [
 
 const Projects = [
   {
+    title: 'Deploying Target at Large Organizations Podcast',
+    description:
+      'In this Podcast, I am interviewed about tips and tricks for deploying Target at large organizations.',
+    url: 'https://perpetua.digital/podcast',
+  },
+  {
     title: 'Perpetua Digital Launch Assistant',
     description:
       'I am the sole developer of the Perpetua Digital Launch Assistant. The Perpetua Digital Launch Assistant is a tool for Adobe Developers that offers better Searching, Visualization of Data Elements and Rule relationships, and creating email and slack alerts for Launch properties.',
@@ -79,7 +92,7 @@ const Projects = [
   {
     title: 'Custom Debug Logger - Launch Extension',
     description:
-      'The Custom Debug Logger extension allows you write custom console logs and toast modal notifications using the Launch UI that are only visible in debug mode.',
+      'The Custom Debug Logger extension allows you to write custom console logs and toast modal notifications using the Launch UI that are only visible in debug mode.',
     url: 'https://www.adobeexchange.com/experiencecloud.details.104698.html',
   },
   {
@@ -218,7 +231,7 @@ const Resume = () => {
           <p className="text-base print:text-base">
             {Certifications.map((cert, index) => (
               <span key={index}>
-                <span className="font-bold">{cert.title}</span>
+                <span className="font-bold print:text-xs">{cert.title}</span>
                 {index !== Certifications.length - 1 ? ' • ' : ''}
               </span>
             ))}
@@ -237,7 +250,7 @@ const Resume = () => {
           ))}
         </ul>
         <Bumper />
-        <SectionHeading title="Experience" className="print:mt-8" />
+        <SectionHeading title="Experience" />
         <ul className="list-none mb-4 print:mb-2">
           {Experience.map((exp, index) => (
             <li key={index} className="pb-4 print:pb-2">
