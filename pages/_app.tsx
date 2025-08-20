@@ -21,7 +21,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <script src="/static/scripts/cookieconsent.js"></script>
         <script src="/static/scripts/prehide.js" async></script>
         <script
-          src="https://assets.adobedtm.com/9d5ea4d031a2/94b8b3ffca90/launch-bd659f5c1e9e.min.js"
+          src={
+            process.env.NEXT_PUBLIC_ADOBE_DTM_SCRIPT_URL ||
+            'https://assets.adobedtm.com/9d5ea4d031a2/94b8b3ffca90/launch-bd659f5c1e9e.min.js'
+          }
           async
         ></script>
       </Head>
