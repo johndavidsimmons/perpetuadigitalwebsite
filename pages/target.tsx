@@ -14,7 +14,9 @@ export default function Target() {
         </div>
         <div className="container py-12">
           <div className="space-y-8">
-            <p>content</p>
+            <p>
+              Your MBOX count is: <span id="mboxCount"></span>
+            </p>
           </div>
         </div>
       </div>
