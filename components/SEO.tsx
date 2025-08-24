@@ -26,10 +26,18 @@ const CommonSEO = ({
   canonicalUrl,
 }: CommonSEOProps) => {
   const router = useRouter()
+
+  // Check if we're in staging environment
+  const isStaging =
+    typeof window !== 'undefined'
+      ? window.location.hostname.includes('staging')
+      : process.env.VERCEL_ENV === 'preview'
+
+  const robotsContent = isStaging ? 'noindex, nofollow' : 'follow, index'
   return (
     <Head>
       <title>{title}</title>
-      <meta name="robots" content="follow, index" />
+      <meta name="robots" content={robotsContent} />
       <meta name="description" content={description} />
       <meta property="og:url" content={`${siteMetadata.siteUrl}${router.asPath}`} />
       <meta property="og:type" content={ogType} />

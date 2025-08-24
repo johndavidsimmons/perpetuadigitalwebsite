@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.perpetua.digital//blog/activity-impression-counting-in-target</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/adding-click-tracking-to-shadow-dom-elements</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/adobe-analytics-alerts-in-microsoft-teams</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/adobe-target-prehiding-in-react-and-nextjs</loc>
+  </url>
+
+  <url>
+    <loc
+      >https://www.perpetua.digital//blog/building-a-launch-extension-part-1-environment-setup</loc
+    >
+  </url>
+
+  <url>
+    <loc
+      >https://www.perpetua.digital//blog/building-an-adobe-analytics-metrics-and-dimensions-definitions-page-with-the-adobe-analytics-api</loc
+    >
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/chain-of-truth-using-truthy-data-elements</loc>
+  </url>
+
+  <url>
+    <loc
+      >https://www.perpetua.digital//blog/collecting-query-parameters-with-amplitude-in-adobe-launch</loc
+    >
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/consent-management-in-aep-with-launch</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/custom-debug-logger-update-now-with-toast-modals</loc>
+  </url>
+
+  <url>
+    <loc
+      >https://www.perpetua.digital//blog/dynamic-scalable-social-proof-offers-with-analytics-and-target-remote-offers</loc
+    >
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/find-broken-data-elements-in-aep-assurance</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/implementing-adobe-web-sdk-data-single-launch-rule</loc>
+  </url>
+
+  <url>
+    <loc
+      >https://www.perpetua.digital//blog/interacting-with-an-adobe-target-activity-based-on-the-movement-of-mercury</loc
+    >
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/launch-github-sync-part-1</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/launch-github-sync-part-2</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/launch-github-sync-part-3</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/launch-github-sync-part-4</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/readme-the-rejected-launch-extension</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/self-hosting-adobe-launch-with-aws</loc>
+  </url>
+
+  <url>
+    <loc>https://www.perpetua.digital//blog/syncing-cms-content-and-adobe-target-offers</loc>
+  </url>
+
+  <url>
+    <loc
+      >https://www.perpetua.digital//blog/updating-rtcdp-profiles-with-launch-event-forwarding</loc
+    >
+  </url>
+
+  <url>
+    <loc
+      >https://www.perpetua.digital//blog/using-data-from-adobe-analytics-in-adobe-target-offers</loc
+    >
+  </url>
+</urlset>
