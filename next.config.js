@@ -72,6 +72,14 @@ module.exports = withContentlayer(
         },
       ]
     },
+    async rewrites() {
+      return [
+        {
+          source: '/robots.txt',
+          destination: '/api/robots',
+        },
+      ]
+    },
     webpack: (config, { dev, isServer }) => {
       config.module.rules.push({
         test: /\.svg$/,
