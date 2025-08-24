@@ -1,6 +1,6 @@
 ---
 title: 'Impression Counting in Target - Examples and Use Cases'
-date: '2025-09-02'
+date: '2025-08-03'
 tags:
   [
     'adobe target',
@@ -11,7 +11,7 @@ tags:
     'personalization',
   ]
 draft: false
-summary: 'How to use impression counting in Target activities and some examples of how to use it'
+summary: 'How to setup impression counting in Target activities and some use cases for it. Includes bonus content for setting up a testing sandbox environment!'
 ---
 
 ## Introduction: <span id="seenPost"></span>
@@ -24,7 +24,7 @@ The most common use cases for this are:
 
 - Limiting the number of times an activity is shown to a user
 - Bucketing users into different experiences based on the number of times they have seen an activity
-- Showing different content to repeat vs first time users
+- Showing different content to repeat vs. first-time users
 - Other fun things that involve counting
 
 I admit those sound pretty boring, and when I write them out like that, they are. But hey, guess what,
@@ -38,7 +38,7 @@ if you refresh this page, the introduction section title will change! Give it a 
 
 You can also count down! Act Quick! This coupon will expire after you see it 5 times!
 
-<style jsx>{`
+<style>{`
   .expired {
     filter: grayscale(100%);
     opacity: 0.6;
@@ -62,8 +62,8 @@ You can also count down! Act Quick! This coupon will expire after you see it 5 t
   }
 `}</style>
 
-        <div
-        id="couponContainer"
+<div
+  id="couponContainer"
             className="bg-white border-2 border-red-500 rounded-lg shadow-lg max-w-md w-full overflow-hidden relative prehide mx-auto"
             style={{
                 backgroundImage: `
@@ -112,19 +112,19 @@ You can also count down! Act Quick! This coupon will expire after you see it 5 t
 
 So these examples are kind of contrived, but they illustrate how profile parameters can be used to
 qualify users into different audiences based on the number of times they have seen an activity.
-How I have really used this in the past is to disqualify users from an activities.
+How I have really used this in the past is to disqualify users from an activity.
 For example:
 
-- "Chaining" activities or experiences ie Users who have seen Activity A _n_ times should be disqualified from it and shown Activity B instead. This is typically referred to as frequency capping.
+- "Chaining" activities or experiences i.e., Users who have seen Activity A _n_ times should be disqualified from it and shown Activity B instead. This is typically referred to as frequency capping.
 - Don't show the "new visitor" banner to users who have seen it more than twice.
-- Changing, the "urgency" of messaging for repeat splash page visitors
-- "Lite" personalization messaging ie "Welcome Back" or "You have viewed this product _n_ times!"
+- Changing the "urgency" of messaging for repeat splash page visitors
+- "Lite" personalization messaging i.e., "Welcome Back" or "You have viewed this product _n_ times!"
 
 <hr />
 
 ## Counting with Profile Scripts
 
-The counting is all done using [profile scripts](https://experienceleague.adobe.com/en/docs/target-learn/tutorials/audiences/create-profile-scripts)
+The counting is all done using [profile scripts](https://experienceleague.adobe.com/en/docs/target-learn/tutorials/audiences/create-profile-scripts).
 If you've worked in Target for any length of time, you know that profile scripts are a powerful feature
 that allow you to run custom code on the server side to create profile attributes. The trivial examples
 usually used are assigning people into random groups or generating random numbers. While, yes, counting
@@ -134,7 +134,7 @@ A lot of the profile attribute counting examples out there are for at.js. If you
 Web SDK, you might have tried this only to have them not work. This stems from the examples using `mbox.name`
 as an out of the box way to infer the mbox name. This does not seem to work anymore with the Web SDK.
 Maybe they changed the name and didn't tell anyone, but I couldn't figure it out. No matter,
-in place of `mbox.name`, you can just pass what ever parameter you want and use that as the count indicator.
+in place of `mbox.name`, you can just pass whatever parameter you want and use that as the count indicator.
 
 Here is the profile script for the attribute that counts the number of times you've seen this blog post:
 
@@ -148,7 +148,7 @@ if (mbox.param('displayedScope').includes('activity-impression-counting-in-targe
 return user.getLocal('POST_COUNT') || 0
 ```
 
-And here is the `sendEvent` call that retrieves the activity and renders the content. Yes, its basically straight from Adobe's
+And here is the `sendEvent` call that retrieves the activity and renders the content. Yes, it's basically straight from Adobe's
 [rendering personalization content](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/personalization/rendering-personalization-content) docs.
 
 ```javascript
@@ -211,10 +211,10 @@ I want to setup 3 scenarios:
 Let's have it show the post count in the headline between visits 2-7. If it is your first time,
 it will say its your first time, and after 7 times it will say something like "you've been here many times".
 
-I don't need several activities for this (although you could). Instead I'm going to have a single Epxerience Targeting (XT)
-type activity with what amount to a cascade experience that changes as your POST_COUNT parameter goes up.
+I don't need several activities for this (although you could). Instead I'm going to have a single Experience Targeting (XT)
+type activity with what amounts to a cascading experience that changes as your POST*COUNT parameter goes up.
 The profile parameter will be your audience qualification. It will serve to discount you from one audience and put you in another.
-Its important to note that profile scripts run _before_ the activity is returned, so in this case a first time visitor's POST_COUNT
+It's important to note that profile scripts run \_before* the activity is returned, so in this case a first time visitor's POST_COUNT
 will be `1` not `0`.
 
 ![audience creation 1](https://images.ctfassets.net/on47yk52ubpi/A1vus0ttBD5gGOMi7saYQ/6799e71f4e4f9741c80fc1f45bc2b96c/postcountaudience1.png)
@@ -238,8 +238,8 @@ will be `1` not `0`.
 <hr />
 ## Activity Setup
 
-Because I'm rending the content on my own, I'm returning JSON offers since that is the easiest to work with. It's also
-the best type of offer to use for cross platform (ie mobile and web) activities.
+Because I'm rendering the content on my own, I'm returning JSON offers since that is the easiest to work with. It's also
+the best type of offer to use for cross platform (i.e., mobile and web) activities.
 
 ```JSON
 // first visit
@@ -266,8 +266,6 @@ to tie your profile across devices and give a "true" count of how many times you
 
 <hr />
 
-## Outro
-
 The concept is simple but the applications are endless. Refresh to add red squares.
 
 <div
@@ -283,3 +281,45 @@ The concept is simple but the applications are endless. Refresh to add red squar
     aspectRatio: '1',
   }}
 ></div>
+
+## Bonus Content - Setting up a Target sandbox environment for quick testing of activities
+
+In my professional experience, Target environments are utilized to their fullest potential. Rather, setup and debugging is done
+in a real production or near production environment and often requires activating and deactivating activities, adding/removing QA query and mbox parameters, etc.
+This is tedious. I prefer to have an environment solely for Target that is a mirror of production where _all_ activities are active
+so I can test without having to do much setup. Here is how I do it:
+
+First, I have a staging environment for this site which is a mirror of production at staging.perpetua.digital.
+This staging domain uses my staging Launch environment.
+The staging Launch environment uses my staging Adobe Experience Platform Web SDK datastream.
+
+![web sdk datastreams](https://images.ctfassets.net/on47yk52ubpi/5c9zU1YOAH3NP6wqtnUkot/7cc01a9c5942c2a2d79de5f9bc6d6ff6/stagingdatastreams.png)
+
+<figure>
+  <figcaption>Datastream setup in the Web SDK Extension Configuration</figcaption>
+</figure>
+
+Inside the Target configuration of my staging datastream, I have the environment ID of my staging Target environment.
+
+![target datastream setup](https://images.ctfassets.net/on47yk52ubpi/A02dmubn62hVSi0LTULus/eb923d081dfa361335a6c401fff348b3/stagingtargetdatastream.png)
+
+<figure>
+  <figcaption>Target Datastream Configuration</figcaption>
+</figure>
+
+Inside of Target Administration > Environments I have a staging environment. This environment is configured so that both active _and_ inactive activities are returned.
+This means that I can fully test activities without having to activate them in production. I like this approach because its quick and there
+is no chance that I accidentally turn something on in production before its ready
+
+![target environment setup](https://images.ctfassets.net/on47yk52ubpi/7JKOWJjtvE5ByE3DNaowgE/f2f5a8cc2c08104c177dd80ad4f59458/targetenvsetup.png)
+
+<figure>
+  <figcaption>The oft overlooked Target Environments settings</figcaption>
+</figure>
+
+Even if you don't want to go to the lengths of hard coding anything, you can still setup an datastream with with _all activities_ are active settings
+and use the AEP Debugger to switch into it via datastream overrides, etc. Try it out!
+
+## Sandbox Demo
+
+Its easier to see this part all connected in a video than trying to understand it from screenshots :)
