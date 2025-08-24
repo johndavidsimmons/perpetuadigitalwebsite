@@ -1,5 +1,5 @@
 ---
-title: 'Activity Impression Counting in Target - Examples and Use Cases'
+title: 'Impression Counting in Target - Examples and Use Cases'
 date: '2025-09-02'
 tags:
   [
@@ -13,3 +13,273 @@ tags:
 draft: false
 summary: 'How to use impression counting in Target activities and some examples of how to use it'
 ---
+
+## Introduction: <span id="seenPost"></span>
+
+Activity impression counting is exactly what it sounds like: counting the number of times
+a user has seen an activity. Well, more specifically, it is counting the number of times a user has seen
+a specific mbox parameter which is typically the name of the mbox or activity.
+
+The most common use cases for this are:
+
+- Limiting the number of times an activity is shown to a user
+- Bucketing users into different experiences based on the number of times they have seen an activity
+- Showing different content to repeat vs first time users
+- Other fun things that involve counting
+
+I admit those sound pretty boring, and when I write them out like that, they are. But hey, guess what,
+this is actually pretty interesting functionality and can be used for some fun things. For example,
+if you refresh this page, the introduction section title will change! Give it a try!
+
+<img
+  src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJib25xMG55NHBjdGJwemQ2czc1djB4MHpzNWRuYnJ1b3gwMnNrZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/75ZaxapnyMp2w/giphy.gif"
+  alt=""
+/>
+
+You can also count down! Act Quick! This coupon will expire after you see it 5 times!
+
+<style jsx>{`
+  .expired {
+    filter: grayscale(100%);
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+  }
+  .expired::after {
+    content: 'EXPIRED';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    font-size: 2rem;
+    font-weight: bold;
+    color: #dc2626;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border: 3px solid #dc2626;
+    border-radius: 8px;
+    z-index: 10;
+  }
+`}</style>
+
+        <div
+        id="couponContainer"
+            className="bg-white border-2 border-red-500 rounded-lg shadow-lg max-w-md w-full overflow-hidden relative prehide mx-auto"
+            style={{
+                backgroundImage: `
+            radial-gradient(circle at 0% 50%, transparent 12px, white 13px),
+            radial-gradient(circle at 100% 50%, transparent 12px, white 13px)
+          `,
+                backgroundPosition: 'left center, right center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '15px 100%'
+            }}
+        >
+            {/* Coupon Header */}
+            <div className="bg-red-500 text-white p-4 text-center relative">
+                <h1 className="text-xl font-bold">Perpetua Digital</h1>
+                <p className="text-sm opacity-90">Your favorite Adobe Blog</p>
+            </div>
+
+            {/* Main Coupon Content */}
+            <div className="p-6 text-center">
+                <div className="mb-4">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-2 prehide">
+                        <span id="couponTitle">Act Now! This coupon will expire in <span id="couponCounter"></span></span>
+                    </h2>
+                </div>
+
+                {/* Dotted Separator */}
+                <div
+                    className="border-t-0 border-b-2 border-l-0 border-r-0 my-4"
+                    style={{
+                        borderStyle: 'dashed',
+                        borderColor: '#94a3b8'
+                    }}
+                ></div>
+
+                {/* Coupon Details */}
+                <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex justify-between">
+                        <span className="font-medium">Coupon Code:</span>
+                        <span className="font-mono bg-gray-100 px-2 py-1 rounded">SAVENOW</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+## Real Life
+
+So these examples are kind of contrived, but they illustrate how profile parameters can be used to
+qualify users into different audiences based on the number of times they have seen an activity.
+How I have really used this in the past is to disqualify users from an activities.
+For example:
+
+- "Chaining" activities or experiences ie Users who have seen Activity A _n_ times should be disqualified from it and shown Activity B instead. This is typically referred to as frequency capping.
+- Don't show the "new visitor" banner to users who have seen it more than twice.
+- Changing, the "urgency" of messaging for repeat splash page visitors
+- "Lite" personalization messaging ie "Welcome Back" or "You have viewed this product _n_ times!"
+
+<hr />
+
+## Counting with Profile Scripts
+
+The counting is all done using [profile scripts](https://experienceleague.adobe.com/en/docs/target-learn/tutorials/audiences/create-profile-scripts)
+If you've worked in Target for any length of time, you know that profile scripts are a powerful feature
+that allow you to run custom code on the server side to create profile attributes. The trivial examples
+usually used are assigning people into random groups or generating random numbers. While, yes, counting
+is also trivial, you can still do a lot with it.
+
+A lot of the profile attribute counting examples out there are for at.js. If you are using the
+Web SDK, you might have tried this only to have them not work. This stems from the examples using `mbox.name`
+as an out of the box way to infer the mbox name. This does not seem to work anymore with the Web SDK.
+Maybe they changed the name and didn't tell anyone, but I couldn't figure it out. No matter,
+in place of `mbox.name`, you can just pass what ever parameter you want and use that as the count indicator.
+
+Here is the profile script for the attribute that counts the number of times you've seen this blog post:
+
+```javascript
+if (mbox.param('displayedScope').includes('activity-impression-counting-in-target')) {
+  var postCount = user.getLocal('POST_COUNT') || 0
+  postCount = postCount + 1
+  user.setLocal('POST_COUNT', postCount)
+  return postCount
+}
+return user.getLocal('POST_COUNT') || 0
+```
+
+And here is the `sendEvent` call that retrieves the activity and renders the content. Yes, its basically straight from Adobe's
+[rendering personalization content](https://experienceleague.adobe.com/en/docs/experience-platform/web-sdk/personalization/rendering-personalization-content) docs.
+
+```javascript
+alloy('sendEvent', {
+  xdm: {
+    eventType: 'decisioning.propositionFetch',
+  },
+  decisionScopes: ['activity-impression-counting-in-target'],
+  renderDecisions: false,
+  data: {
+    __adobe: {
+      target: {
+        displayedScope: 'activity-impression-counting-in-target',
+      },
+    },
+  },
+}).then(function (result) {
+  const propositions = result.propositions || []
+  propositions.forEach((proposition) => {
+    if (proposition.scope === 'activity-impression-counting-in-target') {
+      proposition.items.forEach((item) => {
+        const { data } = item
+        const { content } = data
+        const { POST_COUNT } = content
+        const counterElement = document.querySelector('#seenPost')
+        if (counterElement && POST_COUNT) {
+          counterElement.innerHTML = POST_COUNT
+        }
+
+        // send display event truncated for brevity
+      })
+    }
+  })
+})
+// catch errors etc
+```
+
+Note the `displayedScope` parameter in the `data.__adobe.target` object. This is the parameter that is passed to the activity
+and ultimately to the profile script. I just made up the name `displayedScope` and used my mbox name as the value for the parameter;
+you can use whatever you want as your "counting" parameter name and value. Each time you refresh this page, the profile script will
+increment the count.
+
+<div style={{ backgroundColor: 'lightgray', padding: '10px', borderRadius: '5px' }}>
+  ![GIF of it COUNTING if you are too lazy to
+  refresh](https://images.ctfassets.net/on47yk52ubpi/3YMp73N8aQf0H2TD0vL4iJ/b539eb38fdd99a64da8d31d7cccd9d3e/postrefresh.gif)
+</div>
+<figure>
+  <figcaption>Breaking the fourth wall over here!</figcaption>
+</figure>
+
+## Audience Setup
+
+So now I have a counting profile parameter, here is how I can incorporate it into an activity.
+I want to setup 3 scenarios:
+
+- **First time visitor** (POST_COUNT = 1 or POST_COUNT is undefined)
+- **Repeat visitor** (POST_COUNT more than 1, but less than say 7)
+- **Many time visitor** (POST_COUNT more than 7)
+
+Let's have it show the post count in the headline between visits 2-7. If it is your first time,
+it will say its your first time, and after 7 times it will say something like "you've been here many times".
+
+I don't need several activities for this (although you could). Instead I'm going to have a single Epxerience Targeting (XT)
+type activity with what amount to a cascade experience that changes as your POST_COUNT parameter goes up.
+The profile parameter will be your audience qualification. It will serve to discount you from one audience and put you in another.
+Its important to note that profile scripts run _before_ the activity is returned, so in this case a first time visitor's POST_COUNT
+will be `1` not `0`.
+
+![audience creation 1](https://images.ctfassets.net/on47yk52ubpi/A1vus0ttBD5gGOMi7saYQ/6799e71f4e4f9741c80fc1f45bc2b96c/postcountaudience1.png)
+
+<figure>
+  <figcaption>New Visitors</figcaption>
+</figure>
+
+![audience creation 2](https://images.ctfassets.net/on47yk52ubpi/V6TRGMeSG4el4eZjQTl9n/1b8b75ed64249597eb8a86be6d07c190/postcountaudience2.png)
+
+<figure>
+  <figcaption>Repeat Visitors</figcaption>
+</figure>
+
+![audience creation 3](https://images.ctfassets.net/on47yk52ubpi/3COYs65gY4kWvJdMkWijh8/8171f414e18ed2af4371f525b7ce2944/postcountaudience3.png)
+
+<figure>
+  <figcaption>Many Time Visitors</figcaption>
+</figure>
+
+<hr />
+## Activity Setup
+
+Because I'm rending the content on my own, I'm returning JSON offers since that is the easiest to work with. It's also
+the best type of offer to use for cross platform (ie mobile and web) activities.
+
+```JSON
+// first visit
+{
+  "POST_COUNT": "This is your first time reading this post!"
+}
+// repeat visit with post count
+{
+  "POST_COUNT": "You have seen this post ${user.POST_COUNT} times!"
+}
+// many time visitor
+{
+  "POST_COUNT": "You have seen this post many, many times!!!!!"
+}
+```
+
+Here is the overview:
+
+![overview](https://images.ctfassets.net/on47yk52ubpi/5C2VMAOJupd0RScNXEgXxz/37c92b5c6411b962360f969b4fb40d32/postcountoverview.png)
+
+I don't have any mbox 3rd party ID on this site, so you can reset everything by clearing cookies
+or using incognito mode. If I were doing this for real I would of course use a mbox 3rd party ID
+to tie your profile across devices and give a "true" count of how many times you've seen this post.
+
+<hr />
+
+## Outro
+
+The concept is simple but the applications are endless. Refresh to add red squares.
+
+<div
+  id="redSquareContainer"
+  style={{
+    backgroundColor: 'lightgray',
+    padding: '10px',
+    borderRadius: '5px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(10, 1fr)',
+    gridTemplateRows: 'repeat(10, 1fr)',
+    gap: '5px',
+    aspectRatio: '1',
+  }}
+></div>
