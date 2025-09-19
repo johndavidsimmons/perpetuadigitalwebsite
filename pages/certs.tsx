@@ -27,6 +27,14 @@ const certifications = [
     verificationUrl:
       'https://certification.adobe.com/credential/verify/ac798c84-0026-4f68-b6be-72aba6c4c8e6',
   },
+  {
+    title: 'Adobe Certified Expert - Adobe Customer Journey Analytics Developer',
+    description:
+      "The Adobe Certified Expert - Adobe Customer Journey Analytics Developer certification is the industry-recognized validation of one's expertise in Adobe Customer Journey Analytics. This certification requires in-depth knowledge related to setting up the foundational data for analysis, and your ability to leverage basic AEP data structures and datasets to do so. Further, the candidate can build and validate connections and data views, and configure advanced metrics/dimensions.",
+    image: '/static/images/expertbadge.png',
+    verificationUrl:
+      'https://certification.adobe.com/credential/verify/37338be5-93d3-11f0-8ca0-42010a400fd3',
+  },
 ]
 
 export default function Certs() {
