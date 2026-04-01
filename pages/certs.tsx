@@ -4,12 +4,28 @@ import Image from 'next/image'
 
 const certifications = [
   {
-    title: 'Adobe Certified Expert - Adobe Analytics Business Practitioner',
+    title: 'Adobe Certified Professional - Adobe Customer Journey Analytics Business Practitioner',
     description:
-      "The Adobe Certified Expert - Analytics Business Practitioner certification is the industry-recognized validation of one's proficiency in utilizing Adobe Analytics, helping customers translate their functional requirements and measurements and proposing courses of action based on results.",
+      "The Adobe Certified Professional - Adobe Customer Journey Analytics Business Practitioner certification is the industry-recognized validation of one's proficiency in utilizing Adobe Customer Journey Analytics to analyze cross-channel customer data and drive actionable insights.",
+    image: '/static/images/professionalbadge.png',
+    verificationUrl:
+      'https://certification.adobe.com/credential/verify/94f4aedf-1f0d-11f1-be16-42010a400fe2',
+  },
+  {
+    title: 'Adobe Certified Expert - Adobe Target Business Practitioner',
+    description:
+      "The Adobe Certified Expert - Adobe Target Business Practitioner certification is the industry-recognized validation of one's proficiency in utilizing Adobe Target to create and optimize personalized experiences, run A/B and multivariate tests, and deliver targeted content to the right audiences.",
     image: '/static/images/expertbadge.png',
     verificationUrl:
-      'https://certification.adobe.com/credential/verify/18f60e93-6d52-11f0-9b2a-42010a400fc3',
+      'https://certification.adobe.com/credential/verify/102d3172-1210-11f1-be16-42010a400fe2',
+  },
+  {
+    title: 'Adobe Certified Expert - Adobe Real-Time CDP Developer',
+    description:
+      "The Adobe Certified Expert - Adobe Real-Time CDP Developer certification is the industry-recognized validation of one's proficiency in implementing and managing Adobe Real-Time Customer Data Platform, including building unified customer profiles, configuring destinations, and activating segments across channels.",
+    image: '/static/images/expertbadge.png',
+    verificationUrl:
+      'https://certification.adobe.com/credential/verify/88b06bbf-dd76-11f0-81b9-42010a400fdc',
   },
   {
     title: 'Adobe Certified Expert - Adobe Analytics Developer',
@@ -28,12 +44,28 @@ const certifications = [
       'https://certification.adobe.com/credential/verify/ac798c84-0026-4f68-b6be-72aba6c4c8e6',
   },
   {
+    title: 'Adobe Certified Expert - Adobe Analytics Business Practitioner',
+    description:
+      "The Adobe Certified Expert - Analytics Business Practitioner certification is the industry-recognized validation of one's proficiency in utilizing Adobe Analytics, helping customers translate their functional requirements and measurements and proposing courses of action based on results.",
+    image: '/static/images/expertbadge.png',
+    verificationUrl:
+      'https://certification.adobe.com/credential/verify/18f60e93-6d52-11f0-9b2a-42010a400fc3',
+  },
+  {
     title: 'Adobe Certified Expert - Adobe Customer Journey Analytics Developer',
     description:
       "The Adobe Certified Expert - Adobe Customer Journey Analytics Developer certification is the industry-recognized validation of one's expertise in Adobe Customer Journey Analytics. This certification requires in-depth knowledge related to setting up the foundational data for analysis, and your ability to leverage basic AEP data structures and datasets to do so. Further, the candidate can build and validate connections and data views, and configure advanced metrics/dimensions.",
     image: '/static/images/expertbadge.png',
     verificationUrl:
       'https://certification.adobe.com/credential/verify/37338be5-93d3-11f0-8ca0-42010a400fd3',
+  },
+  {
+    title: 'Adobe Certified Expert - Adobe Journey Optimizer Developer',
+    description:
+      "The Adobe Certified Expert - Adobe Journey Optimizer Developer certification is the industry-recognized validation of one's proficiency in implementing and configuring Adobe Journey Optimizer, including building customer journeys, managing messages across channels, and leveraging decisioning capabilities.",
+    image: '/static/images/expertbadge.png',
+    verificationUrl:
+      'https://certification.adobe.com/credential/verify/c1811122-c2a5-11f0-8ca0-42010a400fd3',
   },
 ]
 
@@ -58,13 +90,17 @@ export default function Certs() {
                 className="flex flex-col space-y-4 rounded-lg border border-gray-200 p-6 dark:border-gray-700 md:flex-row md:space-y-0 md:space-x-6"
               >
                 <div className="flex-shrink-0">
-                  <Image
-                    src={cert.image}
-                    alt={`${cert.title} certification`}
-                    width={96}
-                    height={96}
-                    className="h-24 w-24 rounded-lg object-cover"
-                  />
+                  {cert.image ? (
+                    <Image
+                      src={cert.image}
+                      alt={`${cert.title} certification`}
+                      width={96}
+                      height={96}
+                      className="h-24 w-24 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="h-24 w-24 rounded-lg bg-green-500" />
+                  )}
                 </div>
                 <div className="flex flex-grow flex-col justify-center space-y-2">
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">

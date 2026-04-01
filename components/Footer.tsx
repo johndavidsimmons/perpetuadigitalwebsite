@@ -16,10 +16,6 @@ export default function Footer() {
           <Link href="/">{siteMetadata.title}</Link>
           <div>{` • `}</div>
           <div>{`© ${new Date().getFullYear()}`}</div>
-          <div>{` • `}</div>
-          <Link href="https://www.buymeacoffee.com/perpetuadigital" id="coffee">
-            Buy me a coffee
-          </Link>
         </div>
       </div>
     </footer>
